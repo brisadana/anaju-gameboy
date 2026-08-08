@@ -1,0 +1,1069 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Anaju Pereira</title>
+<meta name="description" content="Um Game Boy interativo para conhecer a Anaju — jogue para descobrir mais.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23e8006a'/%3E%3Crect x='9' y='7' width='14' height='20' rx='2' fill='%239bbc0f'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#e8e5e0;
+    --ink:#1a1a1a;
+    --screen:#9bbc0f;
+    --accent:#e8006a;
+    --header-h:64px;
+    --font-ui:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Helvetica,Arial,sans-serif;
+  }
+
+  *{margin:0;padding:0;box-sizing:border-box;}
+
+  html,body{height:100%;}
+
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--font-ui);
+    overflow-x:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  a{color:inherit;}
+
+  /* ============ HEADER ============ */
+  .topbar{
+    position:sticky;
+    top:0;
+    z-index:50;
+    height:var(--header-h);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 clamp(16px,4vw,40px);
+    background:var(--bg);
+  }
+
+  .topbar-link{
+    font-size:12px;
+    font-weight:600;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    text-decoration:none;
+    color:var(--ink);
+    transition:opacity .15s ease;
+    white-space:nowrap;
+  }
+  .topbar-link:hover{opacity:0.55;}
+
+  .topbar-brand{
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+
+  .topbar-avatar{
+    width:28px;
+    height:28px;
+    border-radius:50%;
+    background:var(--accent);
+    color:#fff8;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:11px;
+    font-weight:700;
+    color:#fff;
+    flex:none;
+  }
+
+  .topbar-name{
+    font-size:12px;
+    font-weight:600;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    white-space:nowrap;
+  }
+
+  /* ============ HERO / STAGE ============ */
+  .stage{
+    min-height:calc(100dvh - var(--header-h));
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:clamp(12px,4vh,48px) clamp(12px,4vw,40px);
+  }
+
+  .gb-wrap{
+    position:relative;
+    width:min(78vw,360px);
+    aspect-ratio:0.606;
+    max-height:calc(100dvh - var(--header-h) - 32px);
+  }
+
+  .gb-css3d,
+  .gb-canvas{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+  }
+
+  .gb-css3d{
+    overflow:hidden;
+    z-index:1;
+  }
+
+  .gb-canvas{
+    z-index:2;
+    pointer-events:none;
+    display:block;
+  }
+
+  .gb-wrap.is-loaded .gb-canvas{cursor:default;}
+
+  .gb-loading{
+    position:absolute;
+    inset:0;
+    z-index:5;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:11px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:#0006;
+    background:var(--bg);
+    transition:opacity .5s ease;
+    pointer-events:none;
+  }
+  .gb-loading.hide{opacity:0;}
+
+  /* ============ MOBILE: fills the screen ============ */
+  @media (max-width:640px){
+    .topbar{height:56px;padding:0 16px;}
+    .topbar-name,.topbar-link{font-size:10.5px;}
+    .stage{
+      padding:16px 8px 24px;
+      min-height:calc(100dvh - 56px);
+    }
+    .gb-wrap{
+      width:min(94vw,340px);
+      max-height:calc(100dvh - 56px - 24px);
+    }
+  }
+
+  .credit{
+    text-align:center;
+    font-size:9.5px;
+    letter-spacing:0.03em;
+    color:#0005;
+    padding:0 16px 22px;
+  }
+  .credit a{text-decoration:underline;color:inherit;}
+
+  /* ================================================================
+     SCREEN CONTENT (rendered inside the 3D game boy's LCD via CSS3D)
+     ================================================================ */
+  .gbscr{
+    width:380px;
+    height:288px;
+    background:#c7c4bd;
+    position:relative;
+    overflow:hidden;
+    font-family:'Press Start 2P',monospace;
+    -webkit-font-smoothing:none;
+    user-select:none;
+  }
+
+  .gbscr,
+  .gbscr *{
+    -webkit-user-select:none;
+    user-select:none;
+  }
+
+  .gbscr-header{
+    position:absolute;top:11px;left:16px;right:16px;height:32px;
+  }
+  .gbscr-header-line{
+    height:2px;background:linear-gradient(90deg,#c0405f,#405fc0);opacity:.55;
+  }
+  .gbscr-header-line + .gbscr-header-line{margin-top:22px;}
+  .gbscr-header-label{
+    position:absolute;top:6px;left:50%;transform:translateX(-50%);
+    font-size:5px;letter-spacing:1.5px;color:#8a8781;white-space:nowrap;
+  }
+  .gbscr-battery{
+    position:absolute;top:46px;left:16px;display:flex;align-items:center;gap:4px;
+  }
+  .gbscr-battery-dot{
+    width:5px;height:5px;border-radius:50%;background:#c0405f;
+  }
+  .gbscr-battery-label{font-size:4px;letter-spacing:1px;color:#8a8781;}
+
+  .gbscr-bezel{
+    position:absolute;left:16px;right:16px;top:64px;bottom:14px;
+    background:#20201f;border-radius:7px;padding:6px;
+    box-shadow:inset 0 2px 4px rgba(0,0,0,.6);
+  }
+
+  .gbscr-lcd{
+    width:100%;height:100%;border-radius:2px;position:relative;overflow:hidden;
+    background:#c9dc7f;
+    transition:filter .15s ease;
+  }
+
+  .gbscr-lcd.gb-boot{
+    animation:gbFlicker .7s steps(1,end) 1;
+  }
+  @keyframes gbFlicker{
+    0%{filter:brightness(0);}
+    8%{filter:brightness(1);}
+    16%{filter:brightness(0);}
+    28%{filter:brightness(1);}
+    38%{filter:brightness(0.15);}
+    55%{filter:brightness(1);}
+    100%{filter:brightness(1);}
+  }
+  .gbscr-lcd.gb-off{filter:brightness(0);}
+
+  .gbscr-room{
+    position:absolute;inset:0;
+    background:#c9dc7f;
+  }
+  .gbscr-floor{
+    position:absolute;left:0;right:0;bottom:64px;height:2px;
+    background:#0f380f44;
+  }
+  .gbscr-window{
+    position:absolute;top:9px;left:9px;width:32px;height:28px;
+    border:2px solid #0f380f;background:#8fae4d;
+  }
+  .gbscr-window::before{
+    content:'';position:absolute;left:50%;top:0;bottom:0;width:2px;
+    background:#0f380f;transform:translateX(-50%);
+  }
+  .gbscr-window::after{
+    content:'✦';font-size:7px;color:#0f380f;position:absolute;top:2px;right:2px;
+  }
+  .gbscr-plant{position:absolute;bottom:65px;right:12px;text-align:center;}
+  .gbscr-plant-leaves{font-size:14px;line-height:1;filter:sepia(1) hue-rotate(50deg) saturate(3);}
+  .gbscr-plant-pot{width:12px;height:9px;background:#0f380f;border-radius:0 0 3px 3px;margin:0 auto;}
+
+  .gbscr-hud{
+    position:absolute;top:7px;left:50%;transform:translateX(-50%);
+    width:130px;z-index:6;
+  }
+  .gbscr-hud-label{
+    font-size:5px;color:#0f380f;text-align:center;margin-bottom:3px;letter-spacing:1px;
+  }
+  .gbscr-bar-bg{
+    height:6px;background:#0f380f;border:1px solid #0f380f;border-radius:3px;overflow:hidden;
+  }
+  .gbscr-bar-fill{
+    height:100%;width:0%;background:var(--accent);border-radius:2px;
+    transition:width .8s cubic-bezier(.34,1.56,.64,1);
+  }
+
+  .gbscr-char-wrap{
+    position:absolute;bottom:64px;left:50%;transform:translateX(-50%);
+    transition:transform .3s ease;
+  }
+  .gbscr-char-wrap.bounce{animation:gbCharBounce .5s ease;}
+  @keyframes gbCharBounce{
+    0%,100%{transform:translateX(-50%) translateY(0);}
+    40%{transform:translateX(-50%) translateY(-10px);}
+    70%{transform:translateX(-50%) translateY(-3px);}
+  }
+
+  .gbscr-dialogue{
+    position:absolute;bottom:0;left:0;right:0;
+    background:#0f380fee;
+    border-top:2px solid #0f380f;
+    padding:8px 10px 7px;
+    min-height:70px;
+    z-index:20;
+  }
+  .gbscr-dlg-name{
+    font-size:5px;color:var(--accent);margin-bottom:6px;letter-spacing:2px;
+  }
+  .gbscr-dlg-text{
+    font-size:5.5px;color:#c9dc7f;line-height:1.9;min-height:34px;
+  }
+  .gbscr-cursor{
+    display:inline-block;width:4px;height:8px;background:var(--accent);
+    margin-left:2px;vertical-align:middle;animation:gbBlink .7s infinite;
+  }
+  @keyframes gbBlink{0%,100%{opacity:1;}50%{opacity:0;}}
+  .gbscr-hint{
+    position:absolute;bottom:6px;right:8px;font-size:4.5px;color:#c9dc7f99;
+    animation:gbBlink 1.2s infinite;display:none;
+  }
+
+  .gbscr-menu{
+    position:absolute;inset:0;background:#c9dc7ffa;z-index:30;
+    padding:10px 8px;display:none;flex-direction:column;gap:6px;
+  }
+  .gbscr-menu.open{display:flex;}
+  .gbscr-menu-heading{
+    font-size:5px;color:#0f380f;letter-spacing:1px;margin-bottom:2px;
+  }
+  .gbscr-topic{
+    background:#8fae4d;border:1px solid #0f380f;border-radius:2px;
+    padding:7px 8px;font-family:'Press Start 2P',monospace;font-size:5.2px;
+    color:#0f380f;cursor:pointer;text-align:left;line-height:1.6;position:relative;
+    transition:all .12s ease;
+  }
+  .gbscr-topic:hover:not(:disabled){
+    background:#0f380f;color:var(--accent);
+    padding-left:11px;
+  }
+  .gbscr-topic:disabled{opacity:0.4;cursor:default;}
+  .gbscr-topic.done{color:#4c6b23;border-color:#4c6b2377;}
+  .gbscr-topic.done::after{
+    content:'✓';position:absolute;right:8px;color:var(--accent);opacity:.8;
+  }
+  .gbscr-topic.locked{border-style:dashed;font-size:4.8px;color:#4c6b23;}
+
+  .gbscr-start{
+    position:absolute;inset:0;background:#c9dc7f;z-index:40;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;
+  }
+  .gbscr-title{
+    font-size:12px;color:var(--accent);letter-spacing:2px;text-align:center;
+  }
+  .gbscr-sub{font-size:5px;color:#0f380f;letter-spacing:2px;}
+  .gbscr-press{
+    font-family:'Press Start 2P',monospace;font-size:6px;background:var(--accent);
+    color:#fff;border:none;padding:9px 16px;border-radius:2px;cursor:pointer;
+    box-shadow:0 3px 0 #a3004d;
+  }
+  .gbscr-press:active{transform:translateY(3px);box-shadow:none;}
+
+  .gbscr-ending{
+    position:absolute;inset:0;background:#c9dc7f;z-index:50;
+    display:none;flex-direction:column;align-items:center;justify-content:center;
+    gap:8px;padding:18px;text-align:center;
+  }
+  .gbscr-ending.open{display:flex;}
+  .gbscr-end-emoji{font-size:24px;}
+  .gbscr-end-title{font-size:8px;color:var(--accent);line-height:1.8;}
+  .gbscr-end-msg{font-size:5px;color:#0f380f;line-height:2;}
+  .gbscr-end-links{display:flex;flex-direction:column;gap:5px;margin-top:4px;width:100%;}
+  .gbscr-end-link{
+    font-family:'Press Start 2P',monospace;font-size:5px;color:#0f380f;
+    text-decoration:none;border:1px solid #0f380f;padding:6px 10px;border-radius:2px;
+  }
+
+  .gbscr-particle{
+    position:fixed;pointer-events:none;z-index:9999;font-size:12px;
+    animation:gbParticle 1.3s ease-out forwards;
+  }
+  @keyframes gbParticle{
+    0%{opacity:1;transform:translateY(0) scale(1);}
+    100%{opacity:0;transform:translateY(-60px) scale(.4) rotate(20deg);}
+  }
+
+  .gbscr-notif{
+    position:absolute;top:20px;left:50%;transform:translateX(-50%);
+    background:#0f380fcc;border:1px solid var(--accent);border-radius:2px;
+    padding:4px 8px;font-size:4.5px;color:var(--accent);white-space:nowrap;z-index:60;
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <!-- ✏️ EDITE: coloque seu link real do LinkedIn -->
+  <a class="topbar-link" href="https://www.linkedin.com/" target="_blank" rel="noopener">LinkedIn</a>
+  <div class="topbar-brand">
+    <div class="topbar-avatar" aria-hidden="true">A</div>
+    <span class="topbar-name">Anaju Pereira</span>
+  </div>
+  <a class="topbar-link" href="mailto:sabinoanaju@gmail.com">Email</a>
+</header>
+
+<main class="stage">
+  <div class="gb-wrap" id="gbWrap">
+    <div class="gb-css3d" id="gbCss3d"></div>
+    <canvas class="gb-canvas" id="gbCanvas"></canvas>
+    <div class="gb-loading" id="gbLoading">carregando…</div>
+  </div>
+</main>
+
+<p class="credit">
+  modelo 3D “Nintendo Game Boy (Original 1989)” por
+  <a href="https://sketchfab.com/lokeig" target="_blank" rel="noopener">lokeig</a>
+  · CC&nbsp;BY-NC&nbsp;4.0
+</p>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { CSS3DRenderer, CSS3DObject } from 'three/addons/renderers/CSS3DRenderer.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+/* ══════════════════════════════════════════════════════════════
+   PART 1 — THE GAME (ported from ana-friendship-sim.html,
+   recolored for the DMG green LCD)
+   ══════════════════════════════════════════════════════════════ */
+
+const SCREEN_HTML = `
+<div class="gbscr" id="gbscr">
+  <div class="gbscr-header">
+    <div class="gbscr-header-line"></div>
+    <div class="gbscr-header-line"></div>
+    <div class="gbscr-header-label">DOT MATRIX WITH STEREO SOUND</div>
+  </div>
+  <div class="gbscr-battery">
+    <div class="gbscr-battery-dot"></div>
+    <div class="gbscr-battery-label">BATTERY</div>
+  </div>
+  <div class="gbscr-bezel"><div class="gbscr-lcd" id="gbLcd">
+  <div class="gbscr-room"></div>
+  <div class="gbscr-window"></div>
+  <div class="gbscr-plant">
+    <div class="gbscr-plant-leaves">🌿</div>
+    <div class="gbscr-plant-pot"></div>
+  </div>
+  <div class="gbscr-floor"></div>
+
+  <div class="gbscr-hud">
+    <div class="gbscr-hud-label">💗 AMIZADE</div>
+    <div class="gbscr-bar-bg"><div class="gbscr-bar-fill" id="barFill"></div></div>
+  </div>
+
+  <div class="gbscr-char-wrap" id="charWrap">
+    <svg width="66" height="86" viewBox="0 0 78 100" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="39" cy="28" rx="24" ry="22" fill="#0f380f"/>
+      <rect x="14" y="26" width="9" height="34" rx="4.5" fill="#0f380f"/>
+      <rect x="55" y="26" width="9" height="32" rx="4.5" fill="#0f380f"/>
+      <rect x="33" y="50" width="12" height="9" fill="#cfe6a0"/>
+      <rect x="17" y="58" width="44" height="38" rx="7" fill="#306230"/>
+      <rect x="31" y="58" width="16" height="4" rx="2" fill="#e8006a"/>
+      <rect x="5"  y="60" width="14" height="9" rx="4.5" fill="#306230"/>
+      <rect x="59" y="60" width="14" height="9" rx="4.5" fill="#306230"/>
+      <circle cx="11" cy="69" r="4" fill="#cfe6a0"/>
+      <circle cx="67" cy="69" r="4" fill="#cfe6a0"/>
+      <ellipse cx="39" cy="36" rx="20" ry="20" fill="#cfe6a0"/>
+      <path d="M 19 28 Q 39 12 59 28 Q 55 16 39 14 Q 23 16 19 28" fill="#0f380f"/>
+      <path d="M 20 26 Q 25 36 22 40" stroke="#0f380f" stroke-width="5" fill="none" stroke-linecap="round"/>
+      <path d="M 58 26 Q 53 36 56 40" stroke="#0f380f" stroke-width="5" fill="none" stroke-linecap="round"/>
+
+      <g id="expr-happy">
+        <path d="M 29 34 Q 33 30 37 34" stroke="#0f380f" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M 41 34 Q 45 30 49 34" stroke="#0f380f" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <circle cx="28" cy="43" r="5" fill="#e8006a" opacity="0.35"/>
+        <circle cx="50" cy="43" r="5" fill="#e8006a" opacity="0.35"/>
+        <path d="M 33 45 Q 39 50 45 45" stroke="#0f380f" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+      </g>
+      <g id="expr-excited" style="display:none">
+        <circle cx="33" cy="33" r="5" fill="#0f380f"/>
+        <circle cx="45" cy="33" r="5" fill="#0f380f"/>
+        <circle cx="35" cy="31" r="2" fill="#cfe6a0"/>
+        <circle cx="47" cy="31" r="2" fill="#cfe6a0"/>
+        <circle cx="28" cy="43" r="5" fill="#e8006a" opacity="0.3"/>
+        <circle cx="50" cy="43" r="5" fill="#e8006a" opacity="0.3"/>
+        <path d="M 32 46 Q 39 52 46 46" stroke="#0f380f" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <text x="10" y="18" font-size="9" fill="#e8006a" style="font-family:sans-serif">✦</text>
+        <text x="58" y="14" font-size="7" fill="#e8006a" style="font-family:sans-serif">✦</text>
+      </g>
+      <g id="expr-shy" style="display:none">
+        <path d="M 29 35 Q 33 31 37 35" stroke="#0f380f" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M 41 35 Q 45 31 49 35" stroke="#0f380f" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <circle cx="28" cy="43" r="6" fill="#e8006a" opacity="0.5"/>
+        <circle cx="50" cy="43" r="6" fill="#e8006a" opacity="0.5"/>
+        <path d="M 34 46 Q 39 49 44 46" stroke="#0f380f" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+        <ellipse cx="56" cy="26" rx="2" ry="3" fill="#cfe6a0" opacity="0.8"/>
+      </g>
+    </svg>
+  </div>
+
+  <div class="gbscr-dialogue" id="dialogueBox">
+    <div class="gbscr-dlg-name" id="dlgName">ANA</div>
+    <div class="gbscr-dlg-text" id="dlgText"></div>
+    <div class="gbscr-hint" id="dlgHint">▼ clique / A para continuar</div>
+  </div>
+
+  <div class="gbscr-menu" id="menuScreen">
+    <div class="gbscr-menu-heading">💬 sobre o que quer saber?</div>
+    <button class="gbscr-topic" data-topic="design">🎨  design &amp; trabalho</button>
+    <button class="gbscr-topic" data-topic="moda">👗  moda &amp; estilo</button>
+    <button class="gbscr-topic" data-topic="musica">🎵  o que eu ouço</button>
+    <button class="gbscr-topic" data-topic="rotina">☕  rotina &amp; vida</button>
+    <button class="gbscr-topic locked" data-topic="secret" id="secretBtn" disabled>🔒  ???</button>
+  </div>
+
+  <div class="gbscr-start" id="startScreen">
+    <div class="gbscr-title">ANA.EXE</div>
+    <div class="gbscr-sub">um friendship sim</div>
+    <button class="gbscr-press" id="startBtn">[ começar ]</button>
+  </div>
+
+  <div class="gbscr-ending" id="endingScreen">
+    <div class="gbscr-end-emoji">🎉</div>
+    <div class="gbscr-end-title">somos amigas!</div>
+    <div class="gbscr-end-msg">obrigada por me conhecer.<br>adorei nossa conversa ✨</div>
+    <div class="gbscr-end-links">
+      <a href="mailto:sabinoanaju@gmail.com" class="gbscr-end-link">📩 fala comigo</a>
+      <!-- ✏️ EDITE: coloque seu link real do LinkedIn -->
+      <a href="https://www.linkedin.com/" target="_blank" class="gbscr-end-link">💼 linkedin</a>
+    </div>
+  </div>
+  </div></div>
+</div>`;
+
+const DIALOGUES = {
+  intro: [
+    { text: "Oi! Eu sou a Ana.", expr: 'happy' },
+    { text: "Parece que você caiu no meu mundo por acidente...", expr: 'shy' },
+    { text: "Que tal ficar um pouco? Prometo que é divertido ✨", expr: 'excited' }
+  ],
+  design: [
+    { text: "Ah, design! Meu lugar favorito.", expr: 'excited' },
+    { text: "Trabalho com UX/UI — adoro quando uma solução simples resolve algo complexo.", expr: 'happy' },
+    { text: "É tipo resolver um puzzle, mas o puzzle são as pessoas. 🎨", expr: 'excited' }
+  ],
+  moda: [
+    { text: "Moda pra mim é expressão, não tendência.", expr: 'happy' },
+    { text: "Amo misturar peças vintage com coisas mais modernas...", expr: 'shy' },
+    { text: "O look perfeito é aquele que muda como você anda. 👗", expr: 'excited' }
+  ],
+  musica: [
+    { text: "Hmm, minha playlist é um caos honesto.", expr: 'happy' },
+    { text: "Indie, bossa nova, hyperpop, jazz às 3am...", expr: 'excited' },
+    { text: "Depende completamente do humor. 🎵", expr: 'shy' }
+  ],
+  rotina: [
+    { text: "Sou definitivamente uma pessoa da tarde.", expr: 'shy' },
+    { text: "Café é obrigatório. Completamente não negociável.", expr: 'excited' },
+    { text: "Começo devagar e termino em modo turbo. ☕", expr: 'happy' }
+  ],
+  secret: [
+    { text: "Okay, confissão...", expr: 'shy' },
+    { text: "Eu repito a mesma música no loop por dias inteiros sem perceber.", expr: 'shy' },
+    { text: "Dias. Semanas. É um problema? Talvez. 🎧", expr: 'excited' }
+  ]
+};
+
+const FRIENDSHIP_PER_TOPIC = 20;
+const UNLOCK_SECRET_AT = 25;
+
+let friendship = 0;
+let visitedTopics = new Set();
+let currentLines = [];
+let currentIdx = 0;
+let typing = false;
+let typeTimer = null;
+let phase = 'start';
+
+let screenEl, barFill, charWrap, dlgText, dlgHint, menuScreen, startScreen, endingScreen, secretBtn;
+
+function initGame(root){
+  screenEl    = root.querySelector('#gbLcd');
+  barFill     = root.querySelector('#barFill');
+  charWrap    = root.querySelector('#charWrap');
+  dlgText     = root.querySelector('#dlgText');
+  dlgHint     = root.querySelector('#dlgHint');
+  menuScreen  = root.querySelector('#menuScreen');
+  startScreen = root.querySelector('#startScreen');
+  endingScreen= root.querySelector('#endingScreen');
+  secretBtn   = root.querySelector('#secretBtn');
+
+  root.querySelector('#startBtn').addEventListener('click', () => {
+    startScreen.style.display = 'none';
+    phase = 'intro';
+    startDialogue('intro');
+  });
+
+  root.querySelectorAll('.gbscr-topic').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (btn.disabled) return;
+      const topic = btn.getAttribute('data-topic');
+      menuScreen.classList.remove('open');
+      startDialogue(topic);
+    });
+  });
+
+  screenEl.addEventListener('click', () => {
+    if (phase === 'intro' || phase === 'dialogue') advance();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ' || e.key === 'z' || e.key === 'Z') {
+      if (phase === 'intro' || phase === 'dialogue') advance();
+    }
+    if (e.key === 'x' || e.key === 'X' || e.key === 'Escape') {
+      goBack();
+    }
+  });
+}
+
+function setExpr(expr){
+  ['happy','excited','shy'].forEach(e => {
+    const el = screenEl.querySelector('#expr-' + e);
+    if (el) el.style.display = (e === expr) ? 'block' : 'none';
+  });
+}
+
+function typeText(text, onDone){
+  dlgText.innerHTML = '';
+  dlgHint.style.display = 'none';
+  typing = true;
+  let i = 0;
+  clearInterval(typeTimer);
+  typeTimer = setInterval(() => {
+    i++;
+    dlgText.innerHTML = text.slice(0, i) + '<span class="gbscr-cursor"></span>';
+    if (i >= text.length) {
+      clearInterval(typeTimer);
+      dlgText.innerHTML = text;
+      typing = false;
+      if (onDone) onDone();
+    }
+  }, 32);
+}
+
+function skipTyping(){
+  clearInterval(typeTimer);
+  const line = currentLines[currentIdx];
+  dlgText.innerHTML = line.text;
+  typing = false;
+  dlgHint.style.display = 'block';
+}
+
+function showLine(idx){
+  if (idx >= currentLines.length) return;
+  const line = currentLines[idx];
+  setExpr(line.expr);
+  typeText(line.text, () => { dlgHint.style.display = 'block'; });
+}
+
+function advance(){
+  if (typing) { skipTyping(); return; }
+  currentIdx++;
+  if (currentIdx >= currentLines.length) {
+    if (phase === 'intro' || phase === 'dialogue') openMenu();
+  } else {
+    showLine(currentIdx);
+  }
+}
+
+function goBack(){
+  if (phase === 'dialogue') {
+    clearInterval(typeTimer);
+    typing = false;
+    openMenu();
+  }
+}
+
+function startDialogue(key){
+  phase = 'dialogue';
+  menuScreen.classList.remove('open');
+  currentLines = DIALOGUES[key];
+  currentIdx = 0;
+
+  if (key !== 'intro' && !visitedTopics.has(key)) {
+    visitedTopics.add(key);
+    setTimeout(() => {
+      friendship = Math.min(100, friendship + FRIENDSHIP_PER_TOPIC);
+      barFill.style.width = friendship + '%';
+      bounceChar();
+      spawnParticles();
+      checkUnlocks();
+    }, 600);
+  }
+  showLine(0);
+}
+
+function openMenu(){
+  phase = 'menu';
+  menuScreen.classList.add('open');
+  setExpr('happy');
+  dlgHint.style.display = 'none';
+  dlgText.innerHTML = '';
+
+  screenEl.querySelectorAll('.gbscr-topic[data-topic]').forEach(btn => {
+    const t = btn.getAttribute('data-topic');
+    if (t !== 'secret' && visitedTopics.has(t)) btn.classList.add('done');
+  });
+
+  const allMain = ['design','moda','musica','rotina'].every(t => visitedTopics.has(t));
+  if (allMain && visitedTopics.has('secret')) {
+    setTimeout(showEnding, 400);
+  }
+}
+
+function checkUnlocks(){
+  if (friendship >= UNLOCK_SECRET_AT && secretBtn.disabled) {
+    secretBtn.disabled = false;
+    secretBtn.classList.remove('locked');
+    secretBtn.textContent = '🌟  segredo desbloqueado!';
+    notify('✦ novo tópico desbloqueado!');
+  }
+}
+
+function notify(msg){
+  screenEl.querySelectorAll('.gbscr-notif').forEach(n => n.remove());
+  const el = document.createElement('div');
+  el.className = 'gbscr-notif';
+  el.textContent = msg;
+  screenEl.appendChild(el);
+  setTimeout(() => {
+    el.style.transition = 'opacity 0.5s';
+    el.style.opacity = '0';
+    setTimeout(() => el.remove(), 500);
+  }, 2200);
+}
+
+function showEnding(){
+  endingScreen.classList.add('open');
+  for (let i = 0; i < 4; i++) setTimeout(spawnParticles, i * 350);
+}
+
+function bounceChar(){
+  charWrap.classList.remove('bounce');
+  void charWrap.offsetWidth;
+  charWrap.classList.add('bounce');
+}
+
+function spawnParticles(){
+  const emojis = ['💗','💕','✨','⭐','🌸','💜'];
+  const rect = screenEl.getBoundingClientRect();
+  for (let i = 0; i < 4; i++) {
+    setTimeout(() => {
+      const p = document.createElement('div');
+      p.className = 'gbscr-particle';
+      p.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+      p.style.left = (rect.left + Math.random() * rect.width) + 'px';
+      p.style.top  = (rect.top + Math.random() * rect.height * 0.6 + rect.height * 0.15) + 'px';
+      document.body.appendChild(p);
+      setTimeout(() => p.remove(), 1400);
+    }, i * 150);
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   PART 2 — THE 3D GAME BOY
+   ══════════════════════════════════════════════════════════════ */
+
+const wrap   = document.getElementById('gbWrap');
+const canvas = document.getElementById('gbCanvas');
+const cssEl  = document.getElementById('gbCss3d');
+const loadingEl = document.getElementById('gbLoading');
+
+cssEl.innerHTML = SCREEN_HTML;
+initGame(cssEl);
+
+const HIDDEN_PREFIXES = ['cartridge_low', 'chip_low', 'lockOpen_low'];
+const CONTROL_NAMES = new Set(['a_low','b_low','select_low','switch_low','movement_low','movementknobs_low']);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(32, 1, 0.01, 10);
+
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+
+const keyLight = new THREE.DirectionalLight(0xffffff, 1.6);
+keyLight.position.set(0.4, 0.6, 0.9);
+scene.add(keyLight);
+scene.add(new THREE.AmbientLight(0xffffff, 0.35));
+
+const cssRenderer = new CSS3DRenderer({ element: cssEl });
+
+const webglGroup = new THREE.Group();
+scene.add(webglGroup);
+
+const cssScene = new THREE.Scene();
+const cssGroup = new THREE.Group();
+cssScene.add(cssGroup);
+
+let modelCenter = new THREE.Vector3();
+let modelSize = new THREE.Vector3(90, 149, 39);
+let screenObj = null;
+let interactiveMeshes = [];
+
+const loader = new GLTFLoader();
+loader.load('./assets/models/gameboy.glb', (gltf) => {
+  const root = gltf.scene;
+  webglGroup.add(root);
+
+  root.traverse((obj) => {
+    if (HIDDEN_PREFIXES.some(p => obj.name && obj.name.startsWith(p))) {
+      obj.visible = false;
+    }
+  });
+
+  root.traverse((obj) => {
+    if (obj.isMesh) {
+      obj.frustumCulled = false;
+      interactiveMeshes.push(obj);
+      // The shell material is authored doubleSided; with the screen glass
+      // hidden that lets the camera see straight through to the mirrored
+      // backside of the case interior. Force front-face-only so that gap
+      // is a clean transparent hole instead.
+      if (obj.material) obj.material.side = THREE.FrontSide;
+    }
+  });
+
+  // NOTE: the mesh literally named "Plane009" (material "Black_Screen") is a
+  // stray Sketchfab prop sitting near the speaker grille, NOT the LCD glass.
+  // The actual screen opening is covered by two overlapping meshes —
+  // "screen_low" (the flat glass, printed with the BATTERY/DOT MATRIX labels)
+  // and "screenHolder_low" (the raised bezel around it, larger than the
+  // glass) — both need to be hidden or the bezel's own baked texture shows
+  // through where the CSS3D content should be. We reproduce the printed
+  // labels in the CSS3D screen's own markup instead.
+  let screenPanel = null;
+  let screenHolder = null;
+  root.traverse((obj) => {
+    if (obj.name === 'screen_low_External_0') screenPanel = obj;
+    if (obj.name === 'screenHolder_low_External_0') screenHolder = obj;
+  });
+
+  // Box3.setFromObject ignores .visible, which would pull the (hidden)
+  // cartridges back into the fit — walk only meshes that are actually
+  // visible (including up the ancestor chain).
+  const box = new THREE.Box3();
+  root.traverse((obj) => {
+    if (!obj.isMesh) return;
+    let vis = true, p = obj;
+    while (p) { if (p.visible === false) { vis = false; break; } p = p.parent; }
+    if (vis) box.expandByObject(obj);
+  });
+  box.getSize(modelSize);
+  box.getCenter(modelCenter);
+
+  // CSS3DRenderer treats three.js scene units as CSS pixels 1:1 (no unit
+  // conversion of its own). The glTF model is authored in meters (~0.03-0.15),
+  // which collapses to sub-pixel offsets once turned into a CSS matrix3d.
+  // Rescale the whole rig into a "1 unit ≈ 1 px" range so both renderers agree.
+  const WORLD_SCALE = 1000;
+  webglGroup.scale.setScalar(WORLD_SCALE);
+  webglGroup.updateMatrixWorld(true);
+  modelCenter.multiplyScalar(WORLD_SCALE);
+  modelSize.multiplyScalar(WORLD_SCALE);
+
+  if (screenPanel) screenPanel.visible = false;
+
+  if (screenHolder) {
+    screenHolder.visible = false;
+    screenHolder.updateWorldMatrix(true, false);
+    screenHolder.geometry.computeBoundingBox();
+    const lb = screenHolder.geometry.boundingBox;
+    const zNudge = lb.max.z || 0.5;
+
+    const corners = [
+      new THREE.Vector3(lb.min.x, lb.min.y, zNudge),
+      new THREE.Vector3(lb.max.x, lb.min.y, zNudge),
+      new THREE.Vector3(lb.max.x, lb.max.y, zNudge),
+      new THREE.Vector3(lb.min.x, lb.max.y, zNudge),
+    ].map(v => screenHolder.localToWorld(v));
+
+    const screenCenter = new THREE.Vector3();
+    corners.forEach(c => screenCenter.add(c));
+    screenCenter.multiplyScalar(0.25);
+
+    const screenWidth = corners[0].distanceTo(corners[1]);
+    const screenHeight = corners[1].distanceTo(corners[2]);
+    const screenQuat = new THREE.Quaternion();
+    screenHolder.getWorldQuaternion(screenQuat);
+
+    // The shell has a thin structural rim inside the screen cavity that
+    // becomes visible once the glass/bezel meshes above are hidden (it isn't
+    // reachable with colorWrite:false — that doesn't composite reliably
+    // under software/SwiftShader rendering here). Patch over it with a
+    // small opaque plane colored to match the LCD, roughly where it sits.
+    // screenHolder is now invisible, so children of it wouldn't render —
+    // parent the patch under `root` instead, converting local->world->local.
+    const midY = (lb.min.y + lb.max.y) / 2;
+    const patchLocalPos = new THREE.Vector3((lb.min.x + lb.max.x) / 2, midY + (lb.max.y - lb.min.y) * 0.09, zNudge);
+    const patchWorldPos = screenHolder.localToWorld(patchLocalPos.clone());
+    // patchMesh is parented under `root`, not screenHolder, so its geometry
+    // must be sized in root-local units — divide back out the WORLD_SCALE
+    // baked into screenWidth/screenHeight (which are true world-space sizes).
+    const patchGeo = new THREE.PlaneGeometry(screenWidth / WORLD_SCALE, (screenHeight / WORLD_SCALE) * 0.24);
+    const patchMat = new THREE.MeshBasicMaterial({ color: 0xc9dc7f });
+    const patchMesh = new THREE.Mesh(patchGeo, patchMat);
+    patchMesh.quaternion.copy(screenQuat);
+    root.add(patchMesh);
+    root.worldToLocal(patchWorldPos);
+    patchMesh.position.copy(patchWorldPos);
+
+    const domW = 380, domH = 288;
+    const cssObject = new CSS3DObject(cssEl.querySelector('#gbscr'));
+    cssObject.position.copy(screenCenter);
+    cssObject.quaternion.copy(screenQuat);
+    cssObject.scale.set(screenWidth / domW, screenHeight / domH, (screenWidth / domW + screenHeight / domH) / 2);
+    cssGroup.add(cssObject);
+    screenObj = cssObject;
+  }
+
+  fitCamera();
+  loadingEl.classList.add('hide');
+  wrap.classList.add('is-loaded');
+
+  requestAnimationFrame(() => {
+    const scr = cssEl.querySelector('#gbLcd');
+    scr.classList.add('gb-boot');
+    setTimeout(() => scr.classList.remove('gb-boot'), 750);
+  });
+}, undefined, (err) => {
+  console.error('Failed to load Game Boy model', err);
+  loadingEl.textContent = 'não foi possível carregar o modelo 3D';
+});
+
+function fitCamera(){
+  const fovRad = camera.fov * Math.PI / 180;
+  const tanHalfV = Math.tan(fovRad / 2);
+  // Fit height and width independently — the console is much taller than it
+  // is wide, so treating both as a single "max dimension" (as a naive fit
+  // does) way overshoots the required distance and leaves it tiny on-screen.
+  const fitHeightDist = (modelSize.y / 2) / tanHalfV;
+  const fitWidthDist = (modelSize.x / 2) / (tanHalfV * camera.aspect);
+  const dist = 1.15 * Math.max(fitHeightDist, fitWidthDist);
+  camera.position.set(modelCenter.x, modelCenter.y, modelCenter.z + dist);
+  camera.near = dist / 50;
+  camera.far = dist * 20;
+  camera.lookAt(modelCenter);
+  camera.updateProjectionMatrix();
+}
+
+function resize(){
+  const w = wrap.clientWidth, h = wrap.clientHeight;
+  if (!w || !h) return;
+  camera.aspect = w / h;
+  fitCamera();
+  renderer.setSize(w, h, false);
+  cssRenderer.setSize(w, h);
+}
+window.addEventListener('resize', resize);
+resize();
+
+/* ---- subtle mouse-follow tilt ("leves giradas") ---- */
+const MAX_YAW = 0.22, MAX_PITCH = 0.12;
+let targetYaw = 0, targetPitch = 0;
+let curYaw = 0, curPitch = 0;
+let idleT = 0;
+
+const pointerFine = window.matchMedia('(pointer: fine)').matches;
+
+if (pointerFine) {
+  window.addEventListener('mousemove', (e) => {
+    const r = wrap.getBoundingClientRect();
+    const cx = r.left + r.width / 2;
+    const cy = r.top + r.height / 2;
+    const nx = THREE.MathUtils.clamp((e.clientX - cx) / (window.innerWidth / 2), -1, 1);
+    const ny = THREE.MathUtils.clamp((e.clientY - cy) / (window.innerHeight / 2), -1, 1);
+    targetYaw = nx * MAX_YAW;
+    targetPitch = ny * MAX_PITCH;
+  });
+}
+
+/* ---- clickable buttons via raycasting ---- */
+const raycaster = new THREE.Raycaster();
+const pointerNdc = new THREE.Vector2();
+
+function findControlName(obj){
+  let cur = obj;
+  while (cur) {
+    if (CONTROL_NAMES.has(cur.name)) return cur.name;
+    cur = cur.parent;
+  }
+  return null;
+}
+
+function raycastAt(clientX, clientY){
+  const r = canvas.getBoundingClientRect();
+  pointerNdc.x = ((clientX - r.left) / r.width) * 2 - 1;
+  pointerNdc.y = -((clientY - r.top) / r.height) * 2 + 1;
+  raycaster.setFromCamera(pointerNdc, camera);
+  const hits = raycaster.intersectObjects(interactiveMeshes, false);
+  if (!hits.length) return null;
+  return findControlName(hits[0].object);
+}
+
+let powerOn = true;
+
+function handleControl(name){
+  if (!name) return;
+  switch (name) {
+    case 'a_low':
+    case 'select_low':
+      if (phase === 'intro' || phase === 'dialogue') advance();
+      break;
+    case 'b_low':
+      goBack();
+      break;
+    case 'movement_low':
+    case 'movementknobs_low':
+      if (phase === 'intro' || phase === 'dialogue') advance();
+      break;
+    case 'switch_low':
+      togglePower();
+      break;
+  }
+}
+
+function togglePower(){
+  const scr = cssEl.querySelector('#gbLcd');
+  powerOn = !powerOn;
+  if (!powerOn) {
+    scr.classList.add('gb-off');
+  } else {
+    scr.classList.remove('gb-off');
+    scr.classList.add('gb-boot');
+    setTimeout(() => scr.classList.remove('gb-boot'), 750);
+  }
+}
+
+wrap.addEventListener('pointerdown', (e) => {
+  const name = raycastAt(e.clientX, e.clientY);
+  if (name) handleControl(name);
+});
+
+wrap.addEventListener('pointermove', (e) => {
+  const name = raycastAt(e.clientX, e.clientY);
+  wrap.style.cursor = name ? 'pointer' : '';
+});
+
+/* ---- render loop ---- */
+function animate(t){
+  requestAnimationFrame(animate);
+
+  if (!pointerFine) {
+    idleT += 0.01;
+    targetYaw = Math.sin(idleT) * MAX_YAW * 0.5;
+    targetPitch = Math.cos(idleT * 0.8) * MAX_PITCH * 0.4;
+  }
+
+  curYaw += (targetYaw - curYaw) * 0.06;
+  curPitch += (targetPitch - curPitch) * 0.06;
+
+  const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(curPitch, curYaw, 0, 'YXZ'));
+  webglGroup.quaternion.copy(q);
+  cssGroup.quaternion.copy(q);
+
+  renderer.render(scene, camera);
+  cssRenderer.render(cssScene, camera);
+}
+requestAnimationFrame(animate);
+</script>
+</body>
+</html>
