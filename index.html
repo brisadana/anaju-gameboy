@@ -165,9 +165,16 @@
      SCREEN CONTENT (rendered inside the 3D game boy's LCD via CSS3D)
      ================================================================ */
   .gbscr{
+    /* Monochrome DMG-green ramp, darkest to lightest — every color inside
+       the screen comes from this set, no other hues. */
+    --g0:#0f380f;
+    --g1:#306230;
+    --g2:#8fae4d;
+    --g3:#c9dc7f;
+    --g4:#cfe6a0;
     width:380px;
     height:288px;
-    background:#c9dc7f;
+    background:var(--g3);
     position:relative;
     overflow:hidden;
     font-family:'Press Start 2P',monospace;
@@ -183,7 +190,7 @@
 
   .gbscr-lcd{
     position:absolute;inset:0;overflow:hidden;
-    background:#c9dc7f;
+    background:var(--g3);
     box-shadow:
       inset 0 4px 10px rgba(0,0,0,.45),
       inset 0 -3px 8px rgba(0,0,0,.3),
@@ -207,41 +214,80 @@
 
   .gbscr-room{
     position:absolute;inset:0;
-    background:#c9dc7f;
+    background:var(--g3);
   }
   .gbscr-floor{
     position:absolute;left:0;right:0;bottom:94px;height:2px;
-    background:#0f380f44;
+    background:var(--g0);opacity:.25;
   }
-  .gbscr-window{
-    position:absolute;top:9px;left:9px;width:32px;height:28px;
-    border:2px solid #0f380f;background:#8fae4d;
+
+  /* ---- shelf + potted plant, top-left ---- */
+  .gbscr-shelf{
+    position:absolute;left:26px;top:112px;width:68px;height:6px;
+    background:var(--g0);opacity:.22;border-radius:1px;
   }
-  .gbscr-window::before{
-    content:'';position:absolute;left:50%;top:0;bottom:0;width:2px;
-    background:#0f380f;transform:translateX(-50%);
+  .gbscr-plant{position:absolute;left:30px;top:62px;width:22px;height:52px;}
+  .gbscr-plant-pot{
+    position:absolute;left:2px;top:34px;width:16px;height:16px;
+    background:var(--g0);opacity:.4;border-radius:2px 2px 5px 5px;
   }
-  .gbscr-window::after{
-    content:'✦';font-size:7px;color:#0f380f;position:absolute;top:2px;right:2px;
+  .gbscr-plant-leaf{
+    position:absolute;width:13px;height:13px;background:var(--g1);
+    opacity:.7;border-radius:50%;
   }
-  .gbscr-plant{position:absolute;bottom:95px;right:12px;text-align:center;}
-  .gbscr-plant-leaves{font-size:14px;line-height:1;filter:sepia(1) hue-rotate(50deg) saturate(3);}
-  .gbscr-plant-pot{width:12px;height:9px;background:#0f380f;border-radius:0 0 3px 3px;margin:0 auto;}
+  .gbscr-plant-leaf--l{left:-4px;top:16px;}
+  .gbscr-plant-leaf--c{left:4px;top:0;}
+  .gbscr-plant-leaf--r{left:11px;top:16px;}
+
+  /* ---- framed cat portraits, right wall ---- */
+  .gbscr-frame{
+    position:absolute;background:rgba(15,56,15,.18);border-radius:3px;
+  }
+  .gbscr-frame--a{left:277px;top:112px;width:35px;height:48px;}
+  .gbscr-frame--b{
+    left:325px;top:84px;width:35px;height:48px;
+    display:flex;flex-direction:column;align-items:center;justify-content:space-evenly;
+    padding:6px 0;
+  }
+  .gbscr-cat{position:relative;background:var(--g0);opacity:.4;border-radius:4px;}
+  .gbscr-cat::before,
+  .gbscr-cat::after{
+    content:'';position:absolute;top:-60%;width:0;height:0;
+    border-left:5px solid transparent;border-right:5px solid transparent;
+    border-bottom:7px solid var(--g0);
+  }
+  .gbscr-cat::before{left:8%;}
+  .gbscr-cat::after{right:8%;}
+  .gbscr-cat--big{width:21px;height:17px;margin:18px auto 0;}
+  .gbscr-cat--sm{width:14px;height:11px;}
+  .gbscr-cat--sm::before,
+  .gbscr-cat--sm::after{
+    border-left-width:3px;border-right-width:3px;border-bottom-width:5px;
+  }
 
   .gbscr-hud{
     position:absolute;top:8px;left:50%;transform:translateX(-50%);
-    width:170px;z-index:6;
+    width:190px;z-index:6;text-align:center;
   }
+  .gbscr-hud-row{
+    display:flex;align-items:center;justify-content:center;gap:5px;margin-bottom:4px;
+  }
+  .gbscr-heart{flex:none;display:block;}
   .gbscr-hud-label{
-    font-size:7.5px;color:#0f380f;text-align:center;margin-bottom:4px;letter-spacing:1px;
+    font-size:7.5px;color:var(--g0);letter-spacing:1px;
   }
   .gbscr-bar-bg{
-    height:8px;background:#0f380f;border:1px solid #0f380f;border-radius:3px;overflow:hidden;
+    height:8px;background:rgba(15,56,15,.22);border:1px solid var(--g0);border-radius:3px;overflow:hidden;
   }
   .gbscr-bar-fill{
-    height:100%;width:0%;background:var(--accent);border-radius:2px;
+    height:100%;width:0%;background:var(--g0);border-radius:2px;
     transition:width .8s cubic-bezier(.34,1.56,.64,1);
   }
+  .gbscr-hud-notif{
+    font-size:6.5px;color:var(--g1);letter-spacing:.5px;margin-top:4px;
+    height:8px;opacity:0;transition:opacity .4s ease;
+  }
+  .gbscr-hud-notif.show{opacity:1;}
 
   .gbscr-char-wrap{
     position:absolute;bottom:94px;left:50%;transform:translateX(-50%);
@@ -255,100 +301,111 @@
   }
 
   .gbscr-dialogue{
-    position:absolute;bottom:0;left:0;right:0;
-    background:#0f380fee;
-    border-top:2px solid #0f380f;
-    padding:12px 14px 10px;
-    min-height:100px;
-    z-index:20;
+    position:absolute;bottom:0;left:0;right:0;z-index:20;
   }
   .gbscr-dlg-name{
-    font-size:7.5px;color:var(--accent);margin-bottom:8px;letter-spacing:2px;
+    position:relative;display:inline-block;margin:0 0 0 12px;
+    background:var(--g0);color:var(--g4);
+    font-size:7px;letter-spacing:1px;padding:5px 10px;
+    border-radius:5px 5px 0 0;
+  }
+  .gbscr-dlg-panel{
+    background:var(--g0);padding:9px 14px 12px;min-height:66px;position:relative;
   }
   .gbscr-dlg-text{
-    font-size:8.5px;color:#c9dc7f;line-height:1.9;min-height:50px;
+    font-size:8.5px;color:var(--g3);line-height:1.9;min-height:44px;
   }
   .gbscr-cursor{
-    display:inline-block;width:6px;height:11px;background:var(--accent);
+    display:inline-block;width:6px;height:11px;background:var(--g4);
     margin-left:2px;vertical-align:middle;animation:gbBlink .7s infinite;
   }
   @keyframes gbBlink{0%,100%{opacity:1;}50%{opacity:0;}}
   .gbscr-hint{
-    position:absolute;bottom:8px;right:10px;font-size:6.5px;color:#c9dc7f99;
+    position:absolute;bottom:8px;right:10px;font-size:6.5px;color:var(--g3);opacity:.6;
     animation:gbBlink 1.2s infinite;display:none;
   }
 
   .gbscr-menu{
-    position:absolute;inset:0;background:#c9dc7ffa;z-index:30;
+    position:absolute;inset:0;background:var(--g3);z-index:30;
     padding:12px 10px;display:none;flex-direction:column;gap:8px;
   }
   .gbscr-menu.open{display:flex;}
   .gbscr-menu-heading{
-    font-size:7.5px;color:#0f380f;letter-spacing:1px;margin-bottom:2px;
+    font-size:8px;color:var(--g0);letter-spacing:1px;margin-bottom:2px;text-align:center;
   }
   .gbscr-topic{
-    background:#8fae4d;border:1px solid #0f380f;border-radius:3px;
-    padding:9px 10px;font-family:'Press Start 2P',monospace;font-size:8px;
-    color:#0f380f;cursor:pointer;text-align:left;line-height:1.6;position:relative;
-    transition:all .12s ease;
+    background:rgba(15,56,15,.14);border:none;border-radius:5px;
+    padding:9px 12px;font-family:'Press Start 2P',monospace;font-size:7.5px;
+    color:var(--g0);cursor:pointer;text-align:left;line-height:1.6;position:relative;
+    text-transform:uppercase;transition:all .12s ease;
   }
   .gbscr-topic:hover:not(:disabled),
   .gbscr-topic.focused:not(:disabled){
-    background:#0f380f;color:var(--accent);
-    padding-left:14px;
+    background:var(--g0);color:var(--g4);
+    padding-left:20px;padding-right:20px;
   }
   .gbscr-topic.focused:not(:disabled)::before{
-    content:'▶';position:absolute;left:4px;top:50%;transform:translateY(-50%);
+    content:'▶';position:absolute;left:6px;top:50%;transform:translateY(-50%);
     font-size:7px;animation:gbBlink .8s infinite;
   }
-  .gbscr-topic:disabled{opacity:0.4;cursor:default;}
-  .gbscr-topic.done{color:#4c6b23;border-color:#4c6b2377;}
-  .gbscr-topic.done::after{
-    content:'✓';position:absolute;right:10px;color:var(--accent);opacity:.8;
+  .gbscr-topic.focused:not(:disabled)::after{
+    content:'◀';position:absolute;right:6px;top:50%;transform:translateY(-50%);
+    font-size:7px;animation:gbBlink .8s infinite;
   }
-  .gbscr-topic.locked{border-style:dashed;font-size:7.5px;color:#4c6b23;}
+  .gbscr-topic:disabled{opacity:.5;cursor:default;}
+  .gbscr-topic.done{text-decoration:line-through;opacity:.7;}
+
+  .gbscr-loading{
+    position:absolute;inset:0;background:var(--g3);z-index:40;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+  }
+  .gbscr-boot-title{
+    font-size:16px;color:var(--g0);letter-spacing:1px;text-align:center;
+  }
+  .gbscr-boot-sub{font-size:7px;color:var(--g1);letter-spacing:2px;}
+  .gbscr-boot-bar-bg{
+    width:210px;height:9px;background:rgba(15,56,15,.2);border-radius:2px;overflow:hidden;
+  }
+  .gbscr-boot-bar-fill{
+    height:100%;width:6%;background:var(--g0);
+    transition:width 1.4s cubic-bezier(.22,.61,.36,1);
+  }
 
   .gbscr-start{
-    position:absolute;inset:0;background:#c9dc7f;z-index:40;
-    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
+    position:absolute;inset:0;background:var(--g3);z-index:40;
+    display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;
   }
   .gbscr-title{
-    font-size:18px;color:var(--accent);letter-spacing:2px;text-align:center;
+    font-size:18px;color:var(--g0);letter-spacing:2px;text-align:center;
   }
-  .gbscr-sub{font-size:7.5px;color:#0f380f;letter-spacing:2px;}
+  .gbscr-sub{font-size:7.5px;color:var(--g1);letter-spacing:2px;}
   .gbscr-press-hint{
-    font-family:'Press Start 2P',monospace;font-size:8px;color:var(--accent);
+    font-family:'Press Start 2P',monospace;font-size:8px;color:var(--g0);
     letter-spacing:1px;margin-top:6px;animation:gbBlink 1.1s infinite;
   }
 
   .gbscr-ending{
-    position:absolute;inset:0;background:#c9dc7f;z-index:50;
+    position:absolute;inset:0;background:var(--g3);z-index:50;
     display:none;flex-direction:column;align-items:center;justify-content:center;
-    gap:10px;padding:20px;text-align:center;
+    gap:8px;padding:20px;text-align:center;
   }
   .gbscr-ending.open{display:flex;}
-  .gbscr-end-emoji{font-size:30px;}
-  .gbscr-end-title{font-size:12px;color:var(--accent);line-height:1.8;}
-  .gbscr-end-msg{font-size:7.5px;color:#0f380f;line-height:2;}
+  .gbscr-end-face{display:block;}
+  .gbscr-end-title{font-size:11px;color:var(--g0);line-height:1.8;}
+  .gbscr-end-msg{font-size:7.5px;color:var(--g1);line-height:2;}
   .gbscr-end-links{display:flex;flex-direction:column;gap:7px;margin-top:4px;width:100%;}
   .gbscr-end-link{
-    font-family:'Press Start 2P',monospace;font-size:7.5px;color:#0f380f;
-    text-decoration:none;border:1px solid #0f380f;padding:9px 12px;border-radius:3px;
+    font-family:'Press Start 2P',monospace;font-size:7.5px;color:var(--g0);
+    text-decoration:none;background:rgba(15,56,15,.14);padding:9px 12px;border-radius:5px;
   }
 
   .gbscr-particle{
-    position:fixed;pointer-events:none;z-index:9999;font-size:12px;
+    position:fixed;pointer-events:none;z-index:9999;font-size:12px;color:var(--g0,#0f380f);
     animation:gbParticle 1.3s ease-out forwards;
   }
   @keyframes gbParticle{
     0%{opacity:1;transform:translateY(0) scale(1);}
     100%{opacity:0;transform:translateY(-60px) scale(.4) rotate(20deg);}
-  }
-
-  .gbscr-notif{
-    position:absolute;top:24px;left:50%;transform:translateX(-50%);
-    background:#0f380fcc;border:1px solid var(--accent);border-radius:3px;
-    padding:6px 10px;font-size:7px;color:var(--accent);white-space:nowrap;z-index:60;
   }
 </style>
 </head>
@@ -399,17 +456,33 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 const SCREEN_HTML = `
 <div class="gbscr" id="gbscr">
   <div class="gbscr-lcd" id="gbLcd">
-  <div class="gbscr-room"></div>
-  <div class="gbscr-window"></div>
-  <div class="gbscr-plant">
-    <div class="gbscr-plant-leaves">🌿</div>
-    <div class="gbscr-plant-pot"></div>
+  <div class="gbscr-room">
+    <div class="gbscr-shelf"></div>
+    <div class="gbscr-plant">
+      <div class="gbscr-plant-pot"></div>
+      <div class="gbscr-plant-leaf gbscr-plant-leaf--l"></div>
+      <div class="gbscr-plant-leaf gbscr-plant-leaf--c"></div>
+      <div class="gbscr-plant-leaf gbscr-plant-leaf--r"></div>
+    </div>
+    <div class="gbscr-frame gbscr-frame--a">
+      <div class="gbscr-cat gbscr-cat--big"></div>
+    </div>
+    <div class="gbscr-frame gbscr-frame--b">
+      <div class="gbscr-cat gbscr-cat--sm"></div>
+      <div class="gbscr-cat gbscr-cat--sm"></div>
+    </div>
   </div>
   <div class="gbscr-floor"></div>
 
   <div class="gbscr-hud">
-    <div class="gbscr-hud-label">💗 AMIZADE</div>
+    <div class="gbscr-hud-row">
+      <svg class="gbscr-heart" width="13" height="11" viewBox="0 0 16 14" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 13 C2 9 0 6 0 3.5 C0 1.2 2 0 4 0 C5.6 0 7 .9 8 2.3 C9 .9 10.4 0 12 0 C14 0 16 1.2 16 3.5 C16 6 14 9 8 13 Z" fill="#0f380f"/>
+      </svg>
+      <div class="gbscr-hud-label">nível de amizade</div>
+    </div>
     <div class="gbscr-bar-bg"><div class="gbscr-bar-fill" id="barFill"></div></div>
+    <div class="gbscr-hud-notif" id="hudNotif"></div>
   </div>
 
   <div class="gbscr-char-wrap" id="charWrap">
@@ -419,7 +492,7 @@ const SCREEN_HTML = `
       <rect x="55" y="26" width="9" height="32" rx="4.5" fill="#0f380f"/>
       <rect x="33" y="50" width="12" height="9" fill="#cfe6a0"/>
       <rect x="17" y="58" width="44" height="38" rx="7" fill="#306230"/>
-      <rect x="31" y="58" width="16" height="4" rx="2" fill="#e8006a"/>
+      <rect x="31" y="58" width="16" height="4" rx="2" fill="#0f380f"/>
       <rect x="5"  y="60" width="14" height="9" rx="4.5" fill="#306230"/>
       <rect x="59" y="60" width="14" height="9" rx="4.5" fill="#306230"/>
       <circle cx="11" cy="69" r="4" fill="#cfe6a0"/>
@@ -432,8 +505,8 @@ const SCREEN_HTML = `
       <g id="expr-happy">
         <path d="M 29 34 Q 33 30 37 34" stroke="#0f380f" stroke-width="2" fill="none" stroke-linecap="round"/>
         <path d="M 41 34 Q 45 30 49 34" stroke="#0f380f" stroke-width="2" fill="none" stroke-linecap="round"/>
-        <circle cx="28" cy="43" r="5" fill="#e8006a" opacity="0.35"/>
-        <circle cx="50" cy="43" r="5" fill="#e8006a" opacity="0.35"/>
+        <circle cx="28" cy="43" r="5" fill="#306230" opacity="0.4"/>
+        <circle cx="50" cy="43" r="5" fill="#306230" opacity="0.4"/>
         <path d="M 33 45 Q 39 50 45 45" stroke="#0f380f" stroke-width="1.8" fill="none" stroke-linecap="round"/>
       </g>
       <g id="expr-excited" style="display:none">
@@ -441,17 +514,17 @@ const SCREEN_HTML = `
         <circle cx="45" cy="33" r="5" fill="#0f380f"/>
         <circle cx="35" cy="31" r="2" fill="#cfe6a0"/>
         <circle cx="47" cy="31" r="2" fill="#cfe6a0"/>
-        <circle cx="28" cy="43" r="5" fill="#e8006a" opacity="0.3"/>
-        <circle cx="50" cy="43" r="5" fill="#e8006a" opacity="0.3"/>
+        <circle cx="28" cy="43" r="5" fill="#306230" opacity="0.35"/>
+        <circle cx="50" cy="43" r="5" fill="#306230" opacity="0.35"/>
         <path d="M 32 46 Q 39 52 46 46" stroke="#0f380f" stroke-width="2" fill="none" stroke-linecap="round"/>
-        <text x="10" y="18" font-size="9" fill="#e8006a" style="font-family:sans-serif">✦</text>
-        <text x="58" y="14" font-size="7" fill="#e8006a" style="font-family:sans-serif">✦</text>
+        <text x="10" y="18" font-size="9" fill="#0f380f" style="font-family:sans-serif">✦</text>
+        <text x="58" y="14" font-size="7" fill="#0f380f" style="font-family:sans-serif">✦</text>
       </g>
       <g id="expr-shy" style="display:none">
         <path d="M 29 35 Q 33 31 37 35" stroke="#0f380f" stroke-width="2" fill="none" stroke-linecap="round"/>
         <path d="M 41 35 Q 45 31 49 35" stroke="#0f380f" stroke-width="2" fill="none" stroke-linecap="round"/>
-        <circle cx="28" cy="43" r="6" fill="#e8006a" opacity="0.5"/>
-        <circle cx="50" cy="43" r="6" fill="#e8006a" opacity="0.5"/>
+        <circle cx="28" cy="43" r="6" fill="#306230" opacity="0.55"/>
+        <circle cx="50" cy="43" r="6" fill="#306230" opacity="0.55"/>
         <path d="M 34 46 Q 39 49 44 46" stroke="#0f380f" stroke-width="1.8" fill="none" stroke-linecap="round"/>
         <ellipse cx="56" cy="26" rx="2" ry="3" fill="#cfe6a0" opacity="0.8"/>
       </g>
@@ -459,18 +532,26 @@ const SCREEN_HTML = `
   </div>
 
   <div class="gbscr-dialogue" id="dialogueBox">
-    <div class="gbscr-dlg-name" id="dlgName">ANA</div>
-    <div class="gbscr-dlg-text" id="dlgText"></div>
-    <div class="gbscr-hint" id="dlgHint">▼ clique / A para continuar</div>
+    <div class="gbscr-dlg-name" id="dlgName">ANAJU</div>
+    <div class="gbscr-dlg-panel">
+      <div class="gbscr-dlg-text" id="dlgText"></div>
+      <div class="gbscr-hint" id="dlgHint">▼ A para continuar</div>
+    </div>
   </div>
 
   <div class="gbscr-menu" id="menuScreen">
-    <div class="gbscr-menu-heading">💬 sobre o que quer saber?</div>
-    <button class="gbscr-topic" data-topic="design">🎨  design &amp; trabalho</button>
-    <button class="gbscr-topic" data-topic="moda">👗  moda &amp; estilo</button>
-    <button class="gbscr-topic" data-topic="musica">🎵  o que eu ouço</button>
-    <button class="gbscr-topic" data-topic="rotina">☕  rotina &amp; vida</button>
-    <button class="gbscr-topic locked" data-topic="secret" id="secretBtn" disabled>🔒  ???</button>
+    <div class="gbscr-menu-heading">o que você quer saber?</div>
+    <button class="gbscr-topic" data-topic="design">design &amp; trabalho</button>
+    <button class="gbscr-topic" data-topic="moda">moda &amp; estilo</button>
+    <button class="gbscr-topic" data-topic="musica">o que eu ouço</button>
+    <button class="gbscr-topic" data-topic="rotina">rotina &amp; vida</button>
+    <button class="gbscr-topic" data-topic="secret" id="secretBtn" disabled>???</button>
+  </div>
+
+  <div class="gbscr-loading" id="loadingScreen">
+    <div class="gbscr-boot-title">ANAJU.EXE</div>
+    <div class="gbscr-boot-sub">vamos nos conhecer</div>
+    <div class="gbscr-boot-bar-bg"><div class="gbscr-boot-bar-fill" id="bootBarFill"></div></div>
   </div>
 
   <div class="gbscr-start" id="startScreen">
@@ -480,13 +561,25 @@ const SCREEN_HTML = `
   </div>
 
   <div class="gbscr-ending" id="endingScreen">
-    <div class="gbscr-end-emoji">🎉</div>
-    <div class="gbscr-end-title">somos amigas!</div>
-    <div class="gbscr-end-msg">obrigada por me conhecer.<br>adorei nossa conversa ✨</div>
+    <svg class="gbscr-end-face" width="64" height="60" viewBox="0 0 78 74" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="39" cy="34" rx="24" ry="22" fill="#0f380f"/>
+      <rect x="14" y="32" width="9" height="30" rx="4.5" fill="#0f380f"/>
+      <rect x="55" y="32" width="9" height="28" rx="4.5" fill="#0f380f"/>
+      <ellipse cx="39" cy="42" rx="20" ry="20" fill="#cfe6a0"/>
+      <path d="M 19 34 Q 39 18 59 34 Q 55 22 39 20 Q 23 22 19 34" fill="#0f380f"/>
+      <path d="M 28 39 Q 33 35 38 39" stroke="#0f380f" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+      <circle cx="49" cy="39" r="3" fill="#0f380f"/>
+      <path d="M 33 50 Q 39 55 45 50" stroke="#0f380f" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <ellipse cx="39" cy="53" rx="4" ry="3" fill="#306230"/>
+      <circle cx="27" cy="48" r="4.5" fill="#306230" opacity="0.4"/>
+      <circle cx="51" cy="48" r="4.5" fill="#306230" opacity="0.4"/>
+    </svg>
+    <div class="gbscr-end-title">obaaa! agora somos amigos</div>
+    <div class="gbscr-end-msg">obrigada por me conhecer.<br>adorei nossa conversa ;)</div>
     <div class="gbscr-end-links">
-      <a href="mailto:sabinoanaju@gmail.com" class="gbscr-end-link">📩 fala comigo</a>
       <!-- ✏️ EDITE: coloque seu link real do LinkedIn -->
-      <a href="https://www.linkedin.com/" target="_blank" class="gbscr-end-link">💼 linkedin</a>
+      <a href="https://www.linkedin.com/" target="_blank" class="gbscr-end-link">linkedin</a>
+      <a href="mailto:sabinoanaju@gmail.com" class="gbscr-end-link">email</a>
     </div>
   </div>
   </div>
@@ -534,20 +627,24 @@ let currentLines = [];
 let currentIdx = 0;
 let typing = false;
 let typeTimer = null;
-let phase = 'start';
+let phase = 'loading';
 
-let screenEl, barFill, charWrap, dlgText, dlgHint, menuScreen, startScreen, endingScreen, secretBtn;
+let screenEl, barFill, charWrap, dlgText, dlgHint, menuScreen, startScreen, endingScreen, secretBtn,
+    loadingScreen, bootBarFill, hudNotif;
 
 function initGame(root){
-  screenEl    = root.querySelector('#gbLcd');
-  barFill     = root.querySelector('#barFill');
-  charWrap    = root.querySelector('#charWrap');
-  dlgText     = root.querySelector('#dlgText');
-  dlgHint     = root.querySelector('#dlgHint');
-  menuScreen  = root.querySelector('#menuScreen');
-  startScreen = root.querySelector('#startScreen');
-  endingScreen= root.querySelector('#endingScreen');
-  secretBtn   = root.querySelector('#secretBtn');
+  screenEl     = root.querySelector('#gbLcd');
+  barFill      = root.querySelector('#barFill');
+  charWrap     = root.querySelector('#charWrap');
+  dlgText      = root.querySelector('#dlgText');
+  dlgHint      = root.querySelector('#dlgHint');
+  menuScreen   = root.querySelector('#menuScreen');
+  startScreen  = root.querySelector('#startScreen');
+  endingScreen = root.querySelector('#endingScreen');
+  secretBtn    = root.querySelector('#secretBtn');
+  loadingScreen= root.querySelector('#loadingScreen');
+  bootBarFill  = root.querySelector('#bootBarFill');
+  hudNotif     = root.querySelector('#hudNotif');
 
   root.querySelectorAll('.gbscr-topic').forEach(btn => {
     btn.addEventListener('click', (e) => {
@@ -574,6 +671,29 @@ function initGame(root){
     if (e.key === 'ArrowUp' && phase === 'menu') moveMenuFocus(-1);
     if (e.key === 'ArrowDown' && phase === 'menu') moveMenuFocus(1);
   });
+}
+
+// Cosmetic in-screen boot sequence, played once the Game Boy is fully
+// visible in 3D — the real GLTF/network loading is already done by this
+// point (that's what the outer "carregando…" overlay covers); this is a
+// fixed-length "ANAJU.EXE" splash purely for flavor, before the actual
+// press-start screen.
+const BOOT_MS = 1700;
+function startBootSequence(){
+  const scr = cssEl.querySelector('#gbLcd');
+  scr.classList.add('gb-boot');
+  setTimeout(() => scr.classList.remove('gb-boot'), 750);
+
+  playLoadingLoop();
+  requestAnimationFrame(() => { bootBarFill.style.width = '100%'; });
+
+  setTimeout(() => {
+    stopLoadingLoop();
+    playBootChime();
+    loadingScreen.style.display = 'none';
+    startScreen.style.display = 'flex';
+    phase = 'start';
+  }, BOOT_MS);
 }
 
 function beginGame(){
@@ -655,6 +775,7 @@ function startDialogue(key){
       barFill.style.width = friendship + '%';
       bounceChar();
       spawnParticles();
+      showHudNotif('+' + FRIENDSHIP_PER_TOPIC + ' pts');
       checkUnlocks();
     }, 600);
   }
@@ -719,23 +840,28 @@ function confirmMenuFocus(){
 function checkUnlocks(){
   if (friendship >= UNLOCK_SECRET_AT && secretBtn.disabled) {
     secretBtn.disabled = false;
-    secretBtn.classList.remove('locked');
-    secretBtn.textContent = '🌟  segredo desbloqueado!';
-    notify('✦ novo tópico desbloqueado!');
+    showHudNotif('nova pergunta desbloqueada');
   }
 }
 
-function notify(msg){
-  screenEl.querySelectorAll('.gbscr-notif').forEach(n => n.remove());
-  const el = document.createElement('div');
-  el.className = 'gbscr-notif';
-  el.textContent = msg;
-  screenEl.appendChild(el);
+/* Friendship-bar feedback ("+N pts", "nova pergunta desbloqueada") is
+   queued so a topic visit and an unlock landing in the same tick don't
+   clobber each other — each message gets its full time on screen. */
+let hudNotifQueue = [];
+let hudNotifBusy = false;
+function showHudNotif(msg){
+  hudNotifQueue.push(msg);
+  if (!hudNotifBusy) processHudNotifQueue();
+}
+function processHudNotifQueue(){
+  if (!hudNotifQueue.length) { hudNotifBusy = false; return; }
+  hudNotifBusy = true;
+  hudNotif.textContent = hudNotifQueue.shift();
+  hudNotif.classList.add('show');
   setTimeout(() => {
-    el.style.transition = 'opacity 0.5s';
-    el.style.opacity = '0';
-    setTimeout(() => el.remove(), 500);
-  }, 2200);
+    hudNotif.classList.remove('show');
+    setTimeout(processHudNotifQueue, 300);
+  }, 1600);
 }
 
 function showEnding(){
@@ -750,13 +876,15 @@ function bounceChar(){
 }
 
 function spawnParticles(){
-  const emojis = ['💗','💕','✨','⭐','🌸','💜'];
+  // Plain glyphs, not emoji — emoji render as fixed-color bitmaps and
+  // would break the green-only palette; these inherit `color` instead.
+  const glyphs = ['♥', '✦', '•'];
   const rect = screenEl.getBoundingClientRect();
   for (let i = 0; i < 4; i++) {
     setTimeout(() => {
       const p = document.createElement('div');
       p.className = 'gbscr-particle';
-      p.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+      p.textContent = glyphs[Math.floor(Math.random() * glyphs.length)];
       p.style.left = (rect.left + Math.random() * rect.width) + 'px';
       p.style.top  = (rect.top + Math.random() * rect.height * 0.6 + rect.height * 0.15) + 'px';
       document.body.appendChild(p);
@@ -954,11 +1082,7 @@ loader.load('./gameboy.glb', (gltf) => {
   loadingEl.classList.add('hide');
   wrap.classList.add('is-loaded');
 
-  requestAnimationFrame(() => {
-    const scr = cssEl.querySelector('#gbLcd');
-    scr.classList.add('gb-boot');
-    setTimeout(() => scr.classList.remove('gb-boot'), 750);
-  });
+  requestAnimationFrame(startBootSequence);
 }, undefined, (err) => {
   console.error('Failed to load Game Boy model', err);
   loadingEl.textContent = 'não foi possível carregar o modelo 3D';
@@ -1114,6 +1238,65 @@ function playIntroJingle(){
     });
   } catch (e) { /* audio not available — silently skip */ }
 }
+
+let loadingLoopTimer = null;
+function playLoadingLoop(){
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const notes = [392, 523.25]; // G4, C5 — soft two-note loading pulse
+    let i = 0;
+    const tick = () => {
+      const t0 = audioCtx.currentTime;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(notes[i % notes.length], t0);
+      gain.gain.setValueAtTime(0.0001, t0);
+      gain.gain.exponentialRampToValueAtTime(0.08, t0 + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.09);
+      osc.connect(gain).connect(audioCtx.destination);
+      osc.start(t0);
+      osc.stop(t0 + 0.1);
+      i++;
+    };
+    tick();
+    loadingLoopTimer = setInterval(tick, 260);
+  } catch (e) { /* audio not available — silently skip */ }
+}
+function stopLoadingLoop(){
+  if (loadingLoopTimer) { clearInterval(loadingLoopTimer); loadingLoopTimer = null; }
+}
+function playBootChime(){
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const notes = [659.25, 987.77]; // E5, B5 — short "ready" chime
+    const t0 = audioCtx.currentTime;
+    notes.forEach((freq, i) => {
+      const start = t0 + i * 0.09;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(freq, start);
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.exponentialRampToValueAtTime(0.16, start + 0.015);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.18);
+      osc.connect(gain).connect(audioCtx.destination);
+      osc.start(start);
+      osc.stop(start + 0.2);
+    });
+  } catch (e) { /* audio not available — silently skip */ }
+}
+// Browsers block audio until a user gesture — the loading screen's own
+// sound may start muted, but this resumes it the moment any input lands
+// (a physical button press, a key), so the rest of the game's sounds
+// are never silently skipped after that.
+['pointerdown', 'keydown'].forEach(evt => {
+  window.addEventListener(evt, () => {
+    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+  }, { once: true });
+});
 
 function pressControl(name){
   const node = controlNodes[name];
