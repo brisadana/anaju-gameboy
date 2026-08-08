@@ -1010,19 +1010,28 @@ function fitCamera(){
   camera.updateProjectionMatrix();
 }
 
+let lastSizeW = 0, lastSizeH = 0;
 function resize(){
   const w = wrap.clientWidth, h = wrap.clientHeight;
-  if (!w || !h) return;
+  if (!w || !h || (w === lastSizeW && h === lastSizeH)) return;
+  lastSizeW = w; lastSizeH = h;
   camera.aspect = w / h;
   fitCamera();
   renderer.setSize(w, h, false);
   cssRenderer.setSize(w, h);
 }
 window.addEventListener('resize', resize);
+// wrap's own box can change size for reasons that never fire a window
+// resize (dvh shifting as mobile browser chrome shows/hides, fonts
+// loading late and reflowing, etc). If that drifts out from under the
+// renderer's last-known size, the WebGL canvas and the CSS3D layer stop
+// agreeing on the camera/perspective math and the screen visibly
+// detaches from the console — watch the element itself directly instead.
+new ResizeObserver(resize).observe(wrap);
 resize();
 
 /* ---- subtle mouse-follow tilt ("leves giradas") ---- */
-const MAX_YAW = 0.4, MAX_PITCH = 0.15;
+const MAX_YAW = 0.28, MAX_PITCH = 0.13;
 let targetYaw = 0, targetPitch = 0;
 let curYaw = 0, curPitch = 0;
 let idleT = 0;
@@ -1140,7 +1149,11 @@ function handleControl(hit){
   if (!name) return;
   pressControl(name);
   switch (name) {
-    case 'a_low':
+    // NOTE: the glTF's own mesh names are swapped from the silkscreened
+    // labels — the mesh named "a_low" sits where the shell is printed "B",
+    // and "b_low" sits where it's printed "A". Map by the printed label,
+    // not the mesh name.
+    case 'b_low':
       if (phase === 'intro' || phase === 'dialogue') advance();
       else if (phase === 'menu') confirmMenuFocus();
       break;
@@ -1149,7 +1162,7 @@ function handleControl(hit){
       else if (phase === 'intro' || phase === 'dialogue') advance();
       else if (phase === 'menu') confirmMenuFocus();
       break;
-    case 'b_low':
+    case 'a_low':
       goBack();
       break;
     case 'movement_low':
