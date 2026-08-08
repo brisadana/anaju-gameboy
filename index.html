@@ -93,14 +93,15 @@
     display:flex;
     align-items:center;
     justify-content:center;
-    padding:clamp(12px,4vh,48px) clamp(12px,4vw,40px);
+    padding:clamp(8px,2vh,24px) clamp(8px,2vw,24px);
   }
 
+  /* Game Boy targets ~90% of the available viewport height, capped so it
+     never overflows the viewport width either (aspect-ratio 0.606). */
   .gb-wrap{
     position:relative;
-    width:min(78vw,360px);
     aspect-ratio:0.606;
-    max-height:calc(100dvh - var(--header-h) - 32px);
+    height:min(90dvh, calc(92vw / 0.606));
   }
 
   .gb-css3d,
@@ -146,12 +147,11 @@
     .topbar{height:56px;padding:0 16px;}
     .topbar-name,.topbar-link{font-size:10.5px;}
     .stage{
-      padding:16px 8px 24px;
+      padding:10px 6px 16px;
       min-height:calc(100dvh - 56px);
     }
     .gb-wrap{
-      width:min(94vw,340px);
-      max-height:calc(100dvh - 56px - 24px);
+      height:min(90dvh, calc(96vw / 0.606));
     }
   }
 
@@ -772,7 +772,7 @@ const CONTROL_NAMES = new Set(['a_low','b_low','select_low','switch_low','moveme
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(32, 1, 0.01, 10);
 
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, stencil: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.05;
@@ -798,6 +798,7 @@ let modelCenter = new THREE.Vector3();
 let modelSize = new THREE.Vector3(90, 149, 39);
 let screenObj = null;
 let interactiveMeshes = [];
+const controlNodes = {};
 
 const loader = new GLTFLoader();
 loader.load('./gameboy.glb', (gltf) => {
@@ -807,6 +808,13 @@ loader.load('./gameboy.glb', (gltf) => {
   root.traverse((obj) => {
     if (HIDDEN_PREFIXES.some(p => obj.name && obj.name.startsWith(p))) {
       obj.visible = false;
+    }
+  });
+
+  root.traverse((obj) => {
+    if (CONTROL_NAMES.has(obj.name) && !controlNodes[obj.name]) {
+      controlNodes[obj.name] = obj;
+      obj.userData.restZ = obj.position.z;
     }
   });
 
@@ -863,7 +871,6 @@ loader.load('./gameboy.glb', (gltf) => {
   if (screenPanel) screenPanel.visible = false;
 
   if (screenHolder) {
-    screenHolder.visible = false;
     screenHolder.updateWorldMatrix(true, false);
     screenHolder.geometry.computeBoundingBox();
     const lb = screenHolder.geometry.boundingBox;
@@ -885,26 +892,40 @@ loader.load('./gameboy.glb', (gltf) => {
     const screenQuat = new THREE.Quaternion();
     screenHolder.getWorldQuaternion(screenQuat);
 
+    screenHolder.visible = false;
+
     // The shell has a thin structural rim inside the screen cavity that
-    // becomes visible once the glass/bezel meshes above are hidden (it isn't
-    // reachable with colorWrite:false — that doesn't composite reliably
-    // under software/SwiftShader rendering here). Patch over it with a
-    // small opaque plane colored to match the LCD, roughly where it sits.
-    // screenHolder is now invisible, so children of it wouldn't render —
-    // parent the patch under `root` instead, converting local->world->local.
-    const midY = (lb.min.y + lb.max.y) / 2;
-    const patchLocalPos = new THREE.Vector3((lb.min.x + lb.max.x) / 2, midY + (lb.max.y - lb.min.y) * 0.09, zNudge);
-    const patchWorldPos = screenHolder.localToWorld(patchLocalPos.clone());
-    // patchMesh is parented under `root`, not screenHolder, so its geometry
-    // must be sized in root-local units — divide back out the WORLD_SCALE
-    // baked into screenWidth/screenHeight (which are true world-space sizes).
-    const patchGeo = new THREE.PlaneGeometry(screenWidth / WORLD_SCALE, (screenHeight / WORLD_SCALE) * 0.24);
-    const patchMat = new THREE.MeshBasicMaterial({ color: 0xc9dc7f });
-    const patchMesh = new THREE.Mesh(patchGeo, patchMat);
-    patchMesh.quaternion.copy(screenQuat);
-    root.add(patchMesh);
-    root.worldToLocal(patchWorldPos);
-    patchMesh.position.copy(patchWorldPos);
+    // becomes visible once the glass/bezel meshes are hidden — a flat
+    // colored "patch" mesh used to cover it, but that just hid whatever
+    // game UI happened to sit behind it instead. Punch a proper hole with
+    // the stencil buffer: a dedicated rect (guaranteed solid, unlike
+    // screenHolder's own geometry which may not be) writes a stencil
+    // marker over the LCD area, and every other opaque mesh discards
+    // fragments there, so nothing behind the glass can show through it
+    // regardless of camera angle or what shape happens to be back there.
+    const stencilLocalPos = new THREE.Vector3((lb.min.x + lb.max.x) / 2, (lb.min.y + lb.max.y) / 2, zNudge);
+    const stencilWorldPos = screenHolder.localToWorld(stencilLocalPos.clone());
+    const stencilGeo = new THREE.PlaneGeometry(screenWidth / WORLD_SCALE, screenHeight / WORLD_SCALE);
+    const stencilMat = new THREE.MeshBasicMaterial({
+      colorWrite: false, depthWrite: false,
+      stencilWrite: true, stencilFunc: THREE.AlwaysStencilFunc,
+      stencilZPass: THREE.ReplaceStencilOp, stencilRef: 1,
+    });
+    const stencilMesh = new THREE.Mesh(stencilGeo, stencilMat);
+    stencilMesh.quaternion.copy(screenQuat);
+    stencilMesh.renderOrder = -1;
+    root.add(stencilMesh);
+    root.worldToLocal(stencilWorldPos);
+    stencilMesh.position.copy(stencilWorldPos);
+
+    interactiveMeshes.forEach((obj) => {
+      obj.material.stencilWrite = true;
+      obj.material.stencilFunc = THREE.NotEqualStencilFunc;
+      obj.material.stencilRef = 1;
+      obj.material.stencilFail = THREE.KeepStencilOp;
+      obj.material.stencilZFail = THREE.KeepStencilOp;
+      obj.material.stencilZPass = THREE.KeepStencilOp;
+    });
 
     const domW = 380, domH = 288;
     const cssObject = new CSS3DObject(cssEl.querySelector('#gbscr'));
@@ -1001,8 +1022,43 @@ function raycastAt(clientX, clientY){
 
 let powerOn = true;
 
+/* ---- tactile feedback: click sound + button sinks in, then springs back ---- */
+const PRESS_DEPTH = { a_low: 1.4, b_low: 1.4, select_low: 1.0, movement_low: 0.9, movementknobs_low: 0.9 };
+const HOLD_MS = 90, SPRING_MS = 140;
+const pressedAt = new Map();
+
+let audioCtx = null;
+function playClick(){
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const t0 = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(1200, t0);
+    osc.frequency.exponentialRampToValueAtTime(380, t0 + 0.04);
+    gain.gain.setValueAtTime(0.16, t0);
+    gain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.045);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start(t0);
+    osc.stop(t0 + 0.05);
+  } catch (e) { /* audio not available — silently skip */ }
+}
+
+function pressControl(name){
+  const node = controlNodes[name];
+  const depth = PRESS_DEPTH[name];
+  if (node && depth) {
+    node.position.z = node.userData.restZ - depth;
+    pressedAt.set(name, performance.now());
+  }
+  playClick();
+}
+
 function handleControl(name){
   if (!name) return;
+  pressControl(name);
   switch (name) {
     case 'a_low':
     case 'select_low':
@@ -1059,6 +1115,23 @@ function animate(t){
   const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(curPitch, curYaw, 0, 'YXZ'));
   webglGroup.quaternion.copy(q);
   cssGroup.quaternion.copy(q);
+
+  if (pressedAt.size) {
+    const now = performance.now();
+    pressedAt.forEach((t0, name) => {
+      const node = controlNodes[name];
+      const depth = PRESS_DEPTH[name];
+      if (!node) { pressedAt.delete(name); return; }
+      const elapsed = now - t0;
+      if (elapsed <= HOLD_MS) return;
+      const restZ = node.userData.restZ;
+      const pressedZ = restZ - depth;
+      const springT = Math.min(1, (elapsed - HOLD_MS) / SPRING_MS);
+      const eased = 1 - Math.pow(1 - springT, 3);
+      node.position.z = pressedZ + (restZ - pressedZ) * eased;
+      if (springT >= 1) pressedAt.delete(name);
+    });
+  }
 
   renderer.render(scene, camera);
   cssRenderer.render(cssScene, camera);
