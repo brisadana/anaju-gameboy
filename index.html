@@ -800,7 +800,7 @@ let screenObj = null;
 let interactiveMeshes = [];
 
 const loader = new GLTFLoader();
-loader.load('./assets/models/gameboy.glb', (gltf) => {
+loader.load('./gameboy.glb', (gltf) => {
   const root = gltf.scene;
   webglGroup.add(root);
 
