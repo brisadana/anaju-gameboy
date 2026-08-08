@@ -11,21 +11,25 @@
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#e8e5e0;
+    --bg:#f3ece2;
     --ink:#1a1a1a;
     --screen:#9bbc0f;
     --accent:#e8006a;
     --header-h:64px;
     --font-ui:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Helvetica,Arial,sans-serif;
   }
-  
 
   *{margin:0;padding:0;box-sizing:border-box;}
 
   html,body{height:100%;}
 
   body{
-    background:var(--bg);
+    background-color:var(--bg);
+    background-image:
+      radial-gradient(60% 55% at 92% 100%, #ff8fc0 0%, #ffb0d3 28%, rgba(255,176,211,0.45) 50%, rgba(255,176,211,0) 72%),
+      radial-gradient(38% 34% at 100% 78%, rgba(255,110,170,0.55) 0%, rgba(255,110,170,0) 70%);
+    background-repeat:no-repeat;
+    background-attachment:fixed;
     color:var(--ink);
     font-family:var(--font-ui);
     overflow-x:hidden;
@@ -44,7 +48,7 @@
     align-items:center;
     justify-content:space-between;
     padding:0 clamp(16px,4vw,40px);
-    background:var(--bg);
+    background:transparent;
   }
 
   .topbar-link{
@@ -59,31 +63,41 @@
   }
   .topbar-link:hover{opacity:0.55;}
 
-  .topbar-brand{
+  /* ============ MADE BY (bottom-left) ============ */
+  .madeby{
+    position:fixed;
+    left:clamp(16px,4vw,40px);
+    bottom:20px;
+    z-index:50;
     display:flex;
     align-items:center;
     gap:10px;
   }
 
-  .topbar-avatar{
-    width:28px;
-    height:28px;
+  .madeby-avatar{
+    width:32px;
+    height:32px;
     border-radius:50%;
     background:var(--accent);
-    color:#fff8;
     display:flex;
     align-items:center;
     justify-content:center;
-    font-size:11px;
+    font-size:12px;
     font-weight:700;
     color:#fff;
     flex:none;
   }
 
-  .topbar-name{
+  .madeby-label{
+    font-size:9.5px;
+    letter-spacing:0.05em;
+    color:#0007;
+  }
+
+  .madeby-name{
     font-size:12px;
     font-weight:600;
-    letter-spacing:0.08em;
+    letter-spacing:0.06em;
     text-transform:uppercase;
     white-space:nowrap;
   }
@@ -102,7 +116,7 @@
   .gb-wrap{
     position:relative;
     aspect-ratio:0.606;
-    height:min(90dvh, calc(92vw / 0.606));
+    height:min(88dvh, calc(92vw / 0.606));
   }
 
   .gb-css3d,
@@ -146,22 +160,32 @@
   /* ============ MOBILE: fills the screen ============ */
   @media (max-width:640px){
     .topbar{height:56px;padding:0 16px;}
-    .topbar-name,.topbar-link{font-size:10.5px;}
+    .topbar-link{font-size:10.5px;}
     .stage{
       padding:10px 6px 16px;
       min-height:calc(100dvh - 56px);
     }
     .gb-wrap{
-      height:min(90dvh, calc(96vw / 0.606));
+      height:min(88dvh, calc(96vw / 0.606));
     }
+    .madeby{left:16px;bottom:14px;}
+    .madeby-avatar{width:26px;height:26px;font-size:10px;}
+    .madeby-label{font-size:8px;}
+    .madeby-name{font-size:10px;}
+    .credit{right:16px;bottom:16px;max-width:120px;}
   }
 
   .credit{
-    text-align:center;
-    font-size:9.5px;
-    letter-spacing:0.03em;
-    color:#0005;
-    padding:0 16px 22px;
+    position:fixed;
+    right:clamp(16px,4vw,40px);
+    bottom:20px;
+    z-index:50;
+    text-align:right;
+    font-size:9px;
+    line-height:1.5;
+    letter-spacing:0.02em;
+    color:#0006;
+    max-width:180px;
   }
   .credit a{text-decoration:underline;color:inherit;}
 
@@ -185,33 +209,8 @@
     user-select:none;
   }
 
-  .gbscr-header{
-    position:absolute;top:11px;left:16px;right:16px;height:32px;
-  }
-  .gbscr-header-line{
-    height:2px;background:linear-gradient(90deg,#c0405f,#405fc0);opacity:.55;
-  }
-  .gbscr-header-line + .gbscr-header-line{margin-top:22px;}
-  .gbscr-header-label{
-    position:absolute;top:6px;left:50%;transform:translateX(-50%);
-    font-size:5px;letter-spacing:1.5px;color:#8a8781;white-space:nowrap;
-  }
-  .gbscr-battery{
-    position:absolute;top:46px;left:16px;display:flex;align-items:center;gap:4px;
-  }
-  .gbscr-battery-dot{
-    width:5px;height:5px;border-radius:50%;background:#c0405f;
-  }
-  .gbscr-battery-label{font-size:4px;letter-spacing:1px;color:#8a8781;}
-
-  .gbscr-bezel{
-    position:absolute;left:16px;right:16px;top:64px;bottom:14px;
-    background:#20201f;border-radius:7px;padding:6px;
-    box-shadow:inset 0 2px 4px rgba(0,0,0,.6);
-  }
-
   .gbscr-lcd{
-    width:100%;height:100%;border-radius:2px;position:relative;overflow:hidden;
+    position:absolute;inset:0;overflow:hidden;
     background:#c9dc7f;
     transition:filter .15s ease;
   }
@@ -379,12 +378,16 @@
 <header class="topbar">
   <!-- ✏️ EDITE: coloque seu link real do LinkedIn -->
   <a class="topbar-link" href="https://www.linkedin.com/" target="_blank" rel="noopener">LinkedIn</a>
-  <div class="topbar-brand">
-    <div class="topbar-avatar" aria-hidden="true">A</div>
-    <span class="topbar-name">Anaju Pereira</span>
-  </div>
   <a class="topbar-link" href="mailto:sabinoanaju@gmail.com">Email</a>
 </header>
+
+<footer class="madeby">
+  <div class="madeby-avatar" aria-hidden="true">A</div>
+  <div>
+    <div class="madeby-label">Made by</div>
+    <div class="madeby-name">Anaju Pereira</div>
+  </div>
+</footer>
 
 <main class="stage">
   <div class="gb-wrap" id="gbWrap">
@@ -421,16 +424,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
 const SCREEN_HTML = `
 <div class="gbscr" id="gbscr">
-  <div class="gbscr-header">
-    <div class="gbscr-header-line"></div>
-    <div class="gbscr-header-line"></div>
-    <div class="gbscr-header-label">DOT MATRIX WITH STEREO SOUND</div>
-  </div>
-  <div class="gbscr-battery">
-    <div class="gbscr-battery-dot"></div>
-    <div class="gbscr-battery-label">BATTERY</div>
-  </div>
-  <div class="gbscr-bezel"><div class="gbscr-lcd" id="gbLcd">
+  <div class="gbscr-lcd" id="gbLcd">
   <div class="gbscr-room"></div>
   <div class="gbscr-window"></div>
   <div class="gbscr-plant">
@@ -521,7 +515,7 @@ const SCREEN_HTML = `
       <a href="https://www.linkedin.com/" target="_blank" class="gbscr-end-link">💼 linkedin</a>
     </div>
   </div>
-  </div></div>
+  </div>
 </div>`;
 
 const DIALOGUES = {
