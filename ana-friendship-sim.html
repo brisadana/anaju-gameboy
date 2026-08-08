@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ana.exe — Friendship Sim</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --pink: #ff6eb4;
+            --pink-dark: #c04080;
+            --purple-deep: #0d0520;
+            --purple-dark: #1a0a2e;
+            --purple-mid: #2d1060;
+            --purple-light: #9b59b6;
+            --console-bg: #ddd0f0;
+            --console-edge: #b8a0d8;
+            --text-white: #f0e6ff;
+            --dialogue-bg: rgba(8, 3, 20, 0.94);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: var(--purple-deep);
+            background-image:
+                radial-gradient(ellipse at 20% 50%, #2d0a4e18 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 20%, #1a0a6618 0%, transparent 60%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            font-family: 'Press Start 2P', monospace;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Starfield */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                radial-gradient(1px 1px at 10% 15%, #ffffffaa 0%, transparent 100%),
+                radial-gradient(1px 1px at 25% 40%, #ffffff88 0%, transparent 100%),
+                radial-gradient(1px 1px at 75% 10%, #ffffffaa 0%, transparent 100%),
+                radial-gradient(1px 1px at 90% 60%, #ffffff66 0%, transparent 100%),
+                radial-gradient(1px 1px at 50% 80%, #ffffff88 0%, transparent 100%),
+                radial-gradient(1px 1px at 65% 35%, #ffffffaa 0%, transparent 100%),
+                radial-gradient(1px 1px at 35% 70%, #ffffff66 0%, transparent 100%),
+                radial-gradient(1px 1px at 80% 85%, #ffffff88 0%, transparent 100%),
+                radial-gradient(1px 1px at 15% 90%, #ffffffaa 0%, transparent 100%),
+                radial-gradient(1px 1px at 55% 55%, #ffffff66 0%, transparent 100%),
+                radial-gradient(1px 1px at 40% 25%, #ffffff88 0%, transparent 100%),
+                radial-gradient(1px 1px at 88% 30%, #ffffffaa 0%, transparent 100%);
+            pointer-events: none;
+            opacity: 0.5;
+        }
+
+        /* ═══ CONSOLE SHELL ═══ */
+        .console {
+            width: 370px;
+            background: var(--console-bg);
+            border-radius: 18px 18px 55px 55px;
+            padding: 16px 18px 28px;
+            box-shadow:
+                0 0 0 3px var(--console-edge),
+                0 0 0 5px #a080c0,
+                0 30px 80px rgba(0,0,0,0.7),
+                inset 0 2px 0 rgba(255,255,255,0.5),
+                inset 0 -4px 0 rgba(0,0,0,0.1);
+            position: relative;
+            z-index: 10;
+        }
+
+        .console-brand {
+            text-align: center;
+            font-size: 6px;
+            color: #9980c0;
+            letter-spacing: 5px;
+            margin-bottom: 10px;
+        }
+
+        /* ═══ SCREEN ═══ */
+        .screen-bezel {
+            background: #221040;
+            border-radius: 8px;
+            padding: 5px;
+            margin-bottom: 14px;
+            box-shadow:
+                inset 0 3px 8px rgba(0,0,0,0.7),
+                0 2px 0 rgba(255,255,255,0.15);
+        }
+
+        .screen {
+            width: 100%;
+            height: 290px;
+            background: var(--purple-dark);
+            border-radius: 4px;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        /* ═══ ROOM BACKGROUND ═══ */
+        .room-bg {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, #0f0520 0%, #1a0a38 55%, #240e50 100%);
+        }
+
+        /* Floor line */
+        .room-floor {
+            position: absolute;
+            bottom: 82px;
+            left: 0; right: 0;
+            height: 2px;
+            background: #3d1a68;
+            box-shadow: 0 0 12px rgba(155, 89, 182, 0.25);
+        }
+
+        /* Window */
+        .deco-window {
+            position: absolute;
+            top: 10px; left: 10px;
+            width: 38px; height: 34px;
+            border: 2px solid #4a3070;
+            background: #091830;
+            box-shadow: 0 0 10px #1a2a7a44;
+        }
+        .deco-window::before {
+            content: '';
+            position: absolute;
+            left: 50%; top: 0; bottom: 0;
+            width: 2px;
+            background: #4a3070;
+            transform: translateX(-50%);
+        }
+        .deco-window::after {
+            content: '✦';
+            font-size: 8px;
+            color: #6060ff;
+            position: absolute;
+            top: 3px; right: 3px;
+        }
+
+        /* Stars through window */
+        .deco-window-star {
+            position: absolute;
+            top: 6px; left: 5px;
+            width: 2px; height: 2px;
+            background: white;
+            border-radius: 50%;
+            box-shadow: 6px 4px 0 white, 2px 12px 0 white;
+        }
+
+        /* Shelf */
+        .deco-shelf {
+            position: absolute;
+            top: 10px; right: 10px;
+            width: 54px; height: 36px;
+        }
+        .deco-shelf::before {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 3px;
+            background: #5a3090;
+        }
+        .shelf-books {
+            position: absolute;
+            bottom: 3px; left: 2px; right: 2px;
+            height: 22px;
+            display: flex;
+            gap: 2px;
+        }
+        .shelf-book {
+            flex: 1;
+            border-radius: 1px 1px 0 0;
+        }
+
+        /* Plant */
+        .deco-plant {
+            position: absolute;
+            bottom: 83px;
+            right: 14px;
+        }
+        .plant-pot {
+            width: 14px; height: 10px;
+            background: #8B4513;
+            border-radius: 0 0 3px 3px;
+            margin: 0 auto;
+        }
+        .plant-leaves {
+            font-size: 16px;
+            line-height: 1;
+            text-align: center;
+            margin-bottom: -2px;
+        }
+
+        /* ═══ FRIENDSHIP BAR ═══ */
+        .hud {
+            position: absolute;
+            top: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 150px;
+            z-index: 10;
+        }
+        .hud-label {
+            font-size: 5px;
+            color: #c080ff;
+            text-align: center;
+            margin-bottom: 3px;
+            letter-spacing: 1px;
+        }
+        .bar-bg {
+            height: 7px;
+            background: #1a0840;
+            border: 1px solid #4a2090;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .bar-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #ff6eb4, #ffb3d9);
+            border-radius: 4px;
+            transition: width 0.8s cubic-bezier(.34,1.56,.64,1);
+            box-shadow: 0 0 8px #ff6eb466;
+        }
+
+        /* ═══ CHARACTER ═══ */
+        .character-wrap {
+            position: absolute;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            transition: transform 0.3s ease;
+        }
+        .character-wrap.bounce {
+            animation: charBounce 0.5s ease;
+        }
+        @keyframes charBounce {
+            0%,100% { transform: translateX(-50%) translateY(0); }
+            40%     { transform: translateX(-50%) translateY(-12px); }
+            70%     { transform: translateX(-50%) translateY(-4px); }
+        }
+
+        /* ═══ DIALOGUE BOX ═══ */
+        .dialogue-box {
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            background: var(--dialogue-bg);
+            border-top: 2px solid #4a2090;
+            padding: 10px 12px 9px;
+            min-height: 82px;
+            z-index: 20;
+        }
+        .dialogue-name {
+            font-size: 5.5px;
+            color: var(--pink);
+            margin-bottom: 7px;
+            letter-spacing: 2px;
+        }
+        .dialogue-text {
+            font-size: 6px;
+            color: var(--text-white);
+            line-height: 1.9;
+            min-height: 40px;
+        }
+        .cursor-blink {
+            display: inline-block;
+            width: 5px; height: 9px;
+            background: var(--pink);
+            margin-left: 2px;
+            vertical-align: middle;
+            animation: blink 0.7s infinite;
+        }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+        .continue-hint {
+            position: absolute;
+            bottom: 8px; right: 10px;
+            font-size: 5px;
+            color: #7050a0;
+            animation: blink 1.2s infinite;
+            display: none;
+        }
+
+        /* ═══ MENU ═══ */
+        .menu-screen {
+            position: absolute;
+            inset: 0;
+            background: rgba(8, 3, 20, 0.97);
+            z-index: 30;
+            padding: 12px 10px;
+            display: none;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .menu-screen.open { display: flex; }
+
+        .menu-heading {
+            font-size: 5.5px;
+            color: #9060d0;
+            letter-spacing: 1px;
+            margin-bottom: 2px;
+        }
+
+        .topic-btn {
+            background: #110828;
+            border: 1px solid #3a1870;
+            border-radius: 3px;
+            padding: 9px 10px;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 6px;
+            color: var(--text-white);
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.12s ease;
+            position: relative;
+            line-height: 1.6;
+        }
+        .topic-btn:hover:not(:disabled) {
+            background: #2a1060;
+            border-color: var(--pink);
+            color: var(--pink);
+            padding-left: 14px;
+        }
+        .topic-btn:disabled {
+            opacity: 0.35;
+            cursor: default;
+        }
+        .topic-btn.done {
+            color: #6040a0;
+            border-color: #2a1060;
+        }
+        .topic-btn.done::after {
+            content: '✓';
+            position: absolute;
+            right: 10px;
+            color: var(--pink);
+            opacity: 0.7;
+        }
+        .topic-btn.locked {
+            border-style: dashed;
+            color: #3a1860;
+            font-size: 5.5px;
+        }
+
+        /* ═══ START SCREEN ═══ */
+        .start-screen {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, #0d0520, #180a35);
+            z-index: 40;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+        }
+
+        .start-title {
+            font-size: 13px;
+            color: var(--pink);
+            text-shadow: 0 0 12px var(--pink), 0 0 30px #ff6eb466;
+            animation: titleGlow 2.5s ease-in-out infinite;
+            letter-spacing: 2px;
+        }
+        @keyframes titleGlow {
+            0%,100% { text-shadow: 0 0 12px var(--pink), 0 0 30px #ff6eb466; }
+            50%      { text-shadow: 0 0 20px var(--pink), 0 0 50px #ff6eb499, 0 0 80px #ff6eb433; }
+        }
+
+        .start-sub {
+            font-size: 5.5px;
+            color: #7050a0;
+            letter-spacing: 3px;
+        }
+
+        .start-char {
+            margin: 4px 0;
+        }
+
+        .press-start {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 6.5px;
+            background: var(--pink);
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 3px;
+            cursor: pointer;
+            box-shadow: 0 4px 0 var(--pink-dark), 0 0 20px #ff6eb466;
+            transition: all 0.1s;
+            animation: floatBtn 3s ease-in-out infinite;
+        }
+        @keyframes floatBtn {
+            0%,100% { transform: translateY(0); }
+            50%      { transform: translateY(-5px); }
+        }
+        .press-start:active {
+            transform: translateY(4px);
+            box-shadow: 0 0 0 var(--pink-dark);
+        }
+
+        /* ═══ ENDING SCREEN ═══ */
+        .ending-screen {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, #0d0520, #1a0a38);
+            z-index: 50;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 20px;
+            text-align: center;
+        }
+        .ending-screen.open { display: flex; }
+
+        .ending-emoji { font-size: 28px; }
+        .ending-title {
+            font-size: 9px;
+            color: var(--pink);
+            text-shadow: 0 0 12px var(--pink);
+            line-height: 2;
+        }
+        .ending-msg {
+            font-size: 5.5px;
+            color: #c0a0e0;
+            line-height: 2.2;
+        }
+        .ending-links {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-top: 6px;
+            width: 100%;
+        }
+        .ending-link {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 5.5px;
+            color: var(--pink);
+            text-decoration: none;
+            border: 1px solid var(--pink);
+            padding: 7px 12px;
+            border-radius: 3px;
+            transition: all 0.15s;
+        }
+        .ending-link:hover {
+            background: var(--pink);
+            color: white;
+        }
+
+        /* ═══ NOTIFICATION ═══ */
+        .notif {
+            position: absolute;
+            top: 22px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255,110,180,0.12);
+            border: 1px solid var(--pink);
+            border-radius: 3px;
+            padding: 5px 10px;
+            font-size: 5px;
+            color: var(--pink);
+            white-space: nowrap;
+            z-index: 60;
+            animation: notifAnim 0.4s ease;
+        }
+        @keyframes notifAnim {
+            from { opacity: 0; top: 12px; }
+            to   { opacity: 1; top: 22px; }
+        }
+
+        /* ═══ FLOATING PARTICLES ═══ */
+        .particle {
+            position: fixed;
+            pointer-events: none;
+            z-index: 100;
+            animation: particleFloat 1.4s ease-out forwards;
+            font-size: 14px;
+        }
+        @keyframes particleFloat {
+            0%   { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-70px) scale(0.4) rotate(20deg); }
+        }
+
+        /* ═══ CONSOLE CONTROLS ═══ */
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 8px;
+            margin-top: 2px;
+        }
+
+        .dpad {
+            width: 50px; height: 50px;
+            position: relative;
+        }
+        .dpad-h, .dpad-v {
+            position: absolute;
+            background: #b0a0d0;
+            border-radius: 2px;
+        }
+        .dpad-h { width: 100%; height: 34%; top: 33%; }
+        .dpad-v { width: 34%; height: 100%; left: 33%; }
+        .dpad-center {
+            position: absolute;
+            width: 34%; height: 34%;
+            top: 33%; left: 33%;
+            background: #c0b0e0;
+            border-radius: 50%;
+        }
+
+        .mid-controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+        .mid-label {
+            font-size: 5px;
+            color: #9070b0;
+            letter-spacing: 3px;
+        }
+        .mid-btns {
+            display: flex;
+            gap: 16px;
+        }
+        .mid-pill {
+            width: 26px; height: 8px;
+            background: #b0a0d0;
+            border-radius: 4px;
+        }
+
+        .ab-buttons {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+        }
+        .ab-row {
+            display: flex;
+            gap: 6px;
+        }
+        .ab-btn {
+            width: 22px; height: 22px;
+            border-radius: 50%;
+            border: none;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 6px;
+            color: rgba(255,255,255,0.85);
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+        .ab-btn:active { transform: scale(0.88); }
+        .btn-a {
+            background: var(--pink);
+            box-shadow: 0 3px 0 var(--pink-dark);
+        }
+        .btn-b {
+            background: #7b39a6;
+            box-shadow: 0 3px 0 #5a2080;
+        }
+        .btn-a:active { box-shadow: none; transform: translateY(3px); }
+        .btn-b:active { box-shadow: none; transform: translateY(3px); }
+    </style>
+</head>
+<body>
+
+<div class="console">
+    <div class="console-brand">✦ FRIENDCOM ✦</div>
+
+    <div class="screen-bezel">
+        <div class="screen" id="screen">
+
+            <!-- Room -->
+            <div class="room-bg"></div>
+            <div class="deco-window">
+                <div class="deco-window-star"></div>
+            </div>
+            <div class="deco-shelf">
+                <div class="shelf-books">
+                    <div class="shelf-book" style="background:#ff6eb4"></div>
+                    <div class="shelf-book" style="background:#9b59b6"></div>
+                    <div class="shelf-book" style="background:#4ecdc4"></div>
+                    <div class="shelf-book" style="background:#ffd700"></div>
+                    <div class="shelf-book" style="background:#ff6eb4"></div>
+                    <div class="shelf-book" style="background:#e74c3c"></div>
+                </div>
+            </div>
+            <div class="deco-plant">
+                <div class="plant-leaves">🌿</div>
+                <div class="plant-pot"></div>
+            </div>
+            <div class="room-floor"></div>
+
+            <!-- HUD -->
+            <div class="hud">
+                <div class="hud-label">💗 AMIZADE</div>
+                <div class="bar-bg">
+                    <div class="bar-fill" id="barFill"></div>
+                </div>
+            </div>
+
+            <!-- Character -->
+            <div class="character-wrap" id="charWrap">
+                <svg id="charSvg" width="78" height="100" viewBox="0 0 78 100" xmlns="http://www.w3.org/2000/svg"
+                     style="filter:drop-shadow(0 6px 12px rgba(155,89,182,0.5))">
+                    <!-- Hair back -->
+                    <ellipse cx="39" cy="28" rx="24" ry="22" fill="#2a1535"/>
+                    <!-- Hair long sides -->
+                    <rect x="14" y="26" width="9" height="34" rx="4.5" fill="#2a1535"/>
+                    <rect x="55" y="26" width="9" height="32" rx="4.5" fill="#2a1535"/>
+                    <!-- Neck -->
+                    <rect x="33" y="50" width="12" height="9" fill="#fdbcb4"/>
+                    <!-- Body / outfit -->
+                    <rect x="17" y="58" width="44" height="38" rx="7" fill="#9b59b6"/>
+                    <!-- Outfit detail -->
+                    <rect x="31" y="58" width="16" height="4" rx="2" fill="#c084e0"/>
+                    <!-- Arms -->
+                    <rect x="5"  y="60" width="14" height="9" rx="4.5" fill="#9b59b6"/>
+                    <rect x="59" y="60" width="14" height="9" rx="4.5" fill="#9b59b6"/>
+                    <!-- Hands -->
+                    <circle cx="11"  cy="69" r="4" fill="#fdbcb4"/>
+                    <circle cx="67" cy="69" r="4" fill="#fdbcb4"/>
+                    <!-- Face -->
+                    <ellipse cx="39" cy="36" rx="20" ry="20" fill="#fdbcb4"/>
+                    <!-- Hair front / fringe -->
+                    <path d="M 19 28 Q 39 12 59 28 Q 55 16 39 14 Q 23 16 19 28" fill="#3a2045"/>
+                    <path d="M 20 26 Q 25 36 22 40" stroke="#3a2045" stroke-width="5" fill="none" stroke-linecap="round"/>
+                    <path d="M 58 26 Q 53 36 56 40" stroke="#3a2045" stroke-width="5" fill="none" stroke-linecap="round"/>
+
+                    <!-- EXPRESSION: happy (default) -->
+                    <g id="expr-happy">
+                        <path d="M 29 34 Q 33 30 37 34" stroke="#3a2045" stroke-width="2" fill="none" stroke-linecap="round"/>
+                        <path d="M 41 34 Q 45 30 49 34" stroke="#3a2045" stroke-width="2" fill="none" stroke-linecap="round"/>
+                        <circle cx="28" cy="43" r="5" fill="#ffb3c6" opacity="0.4"/>
+                        <circle cx="50" cy="43" r="5" fill="#ffb3c6" opacity="0.4"/>
+                        <path d="M 33 45 Q 39 50 45 45" stroke="#c07070" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+                    </g>
+
+                    <!-- EXPRESSION: excited -->
+                    <g id="expr-excited" style="display:none">
+                        <circle cx="33" cy="33" r="5" fill="#2a1535"/>
+                        <circle cx="45" cy="33" r="5" fill="#2a1535"/>
+                        <circle cx="35" cy="31" r="2" fill="white"/>
+                        <circle cx="47" cy="31" r="2" fill="white"/>
+                        <circle cx="28" cy="43" r="5" fill="#ffb3c6" opacity="0.3"/>
+                        <circle cx="50" cy="43" r="5" fill="#ffb3c6" opacity="0.3"/>
+                        <path d="M 32 46 Q 39 52 46 46" stroke="#c07070" stroke-width="2" fill="none" stroke-linecap="round"/>
+                        <text x="10" y="18" font-size="9" fill="#ffd700" style="font-family:sans-serif">✦</text>
+                        <text x="58" y="14" font-size="7" fill="#ffd700" style="font-family:sans-serif">✦</text>
+                    </g>
+
+                    <!-- EXPRESSION: shy -->
+                    <g id="expr-shy" style="display:none">
+                        <path d="M 29 35 Q 33 31 37 35" stroke="#3a2045" stroke-width="2" fill="none" stroke-linecap="round"/>
+                        <path d="M 41 35 Q 45 31 49 35" stroke="#3a2045" stroke-width="2" fill="none" stroke-linecap="round"/>
+                        <circle cx="28" cy="43" r="6" fill="#ff6eb4" opacity="0.55"/>
+                        <circle cx="50" cy="43" r="6" fill="#ff6eb4" opacity="0.55"/>
+                        <path d="M 34 46 Q 39 49 44 46" stroke="#c07070" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+                        <!-- Sweat drop -->
+                        <ellipse cx="56" cy="26" rx="2" ry="3" fill="#a0d0ff" opacity="0.7"/>
+                    </g>
+                </svg>
+            </div>
+
+            <!-- Dialogue -->
+            <div class="dialogue-box" id="dialogueBox">
+                <div class="dialogue-name" id="dlgName">ANA</div>
+                <div class="dialogue-text" id="dlgText"></div>
+                <div class="continue-hint" id="dlgHint">▼ clique para continuar</div>
+            </div>
+
+            <!-- Topic Menu -->
+            <div class="menu-screen" id="menuScreen">
+                <div class="menu-heading">💬 sobre o que quer saber?</div>
+                <button class="topic-btn" data-topic="design">🎨  design &amp; trabalho</button>
+                <button class="topic-btn" data-topic="moda">👗  moda &amp; estilo</button>
+                <button class="topic-btn" data-topic="musica">🎵  o que eu ouço</button>
+                <button class="topic-btn" data-topic="rotina">☕  rotina &amp; vida</button>
+                <button class="topic-btn locked" data-topic="secret" id="secretBtn" disabled>🔒  ???</button>
+            </div>
+
+            <!-- Start Screen -->
+            <div class="start-screen" id="startScreen">
+                <div class="start-title">ANA.EXE</div>
+                <div class="start-sub">um friendship sim</div>
+                <!-- Mini character preview -->
+                <div class="start-char">
+                    <svg width="50" height="64" viewBox="0 0 78 100" xmlns="http://www.w3.org/2000/svg">
+                        <ellipse cx="39" cy="28" rx="24" ry="22" fill="#2a1535"/>
+                        <rect x="33" y="50" width="12" height="9" fill="#fdbcb4"/>
+                        <rect x="17" y="58" width="44" height="38" rx="7" fill="#9b59b6"/>
+                        <rect x="5"  y="60" width="14" height="9" rx="4.5" fill="#9b59b6"/>
+                        <rect x="59" y="60" width="14" height="9" rx="4.5" fill="#9b59b6"/>
+                        <ellipse cx="39" cy="36" rx="20" ry="20" fill="#fdbcb4"/>
+                        <path d="M 19 28 Q 39 12 59 28 Q 55 16 39 14 Q 23 16 19 28" fill="#3a2045"/>
+                        <path d="M 29 34 Q 33 30 37 34" stroke="#3a2045" stroke-width="2" fill="none" stroke-linecap="round"/>
+                        <path d="M 41 34 Q 45 30 49 34" stroke="#3a2045" stroke-width="2" fill="none" stroke-linecap="round"/>
+                        <circle cx="28" cy="43" r="5" fill="#ffb3c6" opacity="0.4"/>
+                        <circle cx="50" cy="43" r="5" fill="#ffb3c6" opacity="0.4"/>
+                        <path d="M 33 45 Q 39 50 45 45" stroke="#c07070" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <button class="press-start" id="startBtn">[ começar ]</button>
+            </div>
+
+            <!-- Ending Screen -->
+            <div class="ending-screen" id="endingScreen">
+                <div class="ending-emoji">🎉</div>
+                <div class="ending-title">somos amigas!</div>
+                <div class="ending-msg">
+                    obrigada por me conhecer.<br>
+                    adorei nossa conversa ✨
+                </div>
+                <div class="ending-links">
+                    <!-- ✏️ EDITE: coloque seus links reais aqui -->
+                    <a href="mailto:sabinoanaju@gmail.com" class="ending-link">📩  fala comigo</a>
+                    <a href="https://linkedin.com" target="_blank" class="ending-link">💼  linkedin</a>
+                </div>
+            </div>
+
+        </div><!-- /screen -->
+    </div><!-- /bezel -->
+
+    <!-- Console controls -->
+    <div class="controls">
+        <div class="dpad">
+            <div class="dpad-h"></div>
+            <div class="dpad-v"></div>
+            <div class="dpad-center"></div>
+        </div>
+
+        <div class="mid-controls">
+            <div class="mid-label">SELECT  START</div>
+            <div class="mid-btns">
+                <div class="mid-pill"></div>
+                <div class="mid-pill"></div>
+            </div>
+        </div>
+
+        <div class="ab-buttons">
+            <div class="ab-row" style="transform:translateX(10px)">
+                <button class="ab-btn btn-a" id="aBtn">A</button>
+            </div>
+            <div class="ab-row" style="transform:translateX(-10px)">
+                <button class="ab-btn btn-b" id="bBtn">B</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// CONTEÚDO — edite os diálogos aqui ✏️
+// ═══════════════════════════════════════════
+const DIALOGUES = {
+    intro: [
+        { text: "Oi! Eu sou a Ana.", expr: 'happy' },
+        { text: "Parece que você caiu no meu mundo por acidente...", expr: 'shy' },
+        { text: "Que tal ficar um pouco? Prometo que é divertido ✨", expr: 'excited' }
+    ],
+    design: [
+        { text: "Ah, design! Meu lugar favorito.", expr: 'excited' },
+        { text: "Trabalho com UX/UI — adoro quando uma solução simples resolve algo complexo.", expr: 'happy' },
+        { text: "É tipo resolver um puzzle, mas o puzzle são as pessoas. 🎨", expr: 'excited' }
+    ],
+    moda: [
+        { text: "Moda pra mim é expressão, não tendência.", expr: 'happy' },
+        { text: "Amo misturar peças vintage com coisas mais modernas...", expr: 'shy' },
+        { text: "O look perfeito é aquele que muda como você anda. 👗", expr: 'excited' }
+    ],
+    musica: [
+        { text: "Hmm, minha playlist é um caos honesto.", expr: 'happy' },
+        { text: "Indie, bossa nova, hyperpop, jazz às 3am...", expr: 'excited' },
+        { text: "Depende completamente do humor. 🎵", expr: 'shy' }
+    ],
+    rotina: [
+        { text: "Sou definitivamente uma pessoa da tarde.", expr: 'shy' },
+        { text: "Café é obrigatório. Completamente não negociável.", expr: 'excited' },
+        { text: "Começo devagar e termino em modo turbo. ☕", expr: 'happy' }
+    ],
+    secret: [
+        { text: "Okay, confissão...", expr: 'shy' },
+        { text: "Eu repito a mesma música no loop por dias inteiros sem perceber.", expr: 'shy' },
+        { text: "Dias. Semanas. É um problema? Talvez. 🎧", expr: 'excited' }
+    ]
+};
+
+const FRIENDSHIP_PER_TOPIC = 20; // 5 tópicos × 20 = 100%
+const UNLOCK_SECRET_AT = 25;     // % para desbloquear o segredo
+
+// ═══════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════
+let friendship = 0;
+let visitedTopics = new Set();
+let currentLines = [];
+let currentIdx = 0;
+let typing = false;
+let typeTimer = null;
+let phase = 'start'; // start | intro | menu | dialogue | ending
+
+// ═══════════════════════════════════════════
+// ELEMENTS
+// ═══════════════════════════════════════════
+const screen      = document.getElementById('screen');
+const barFill     = document.getElementById('barFill');
+const charWrap    = document.getElementById('charWrap');
+const dlgText     = document.getElementById('dlgText');
+const dlgHint     = document.getElementById('dlgHint');
+const menuScreen  = document.getElementById('menuScreen');
+const startScreen = document.getElementById('startScreen');
+const endingScreen= document.getElementById('endingScreen');
+const secretBtn   = document.getElementById('secretBtn');
+
+// ═══════════════════════════════════════════
+// EXPRESSION SYSTEM
+// ═══════════════════════════════════════════
+function setExpr(expr) {
+    ['happy','excited','shy'].forEach(e => {
+        document.getElementById('expr-' + e).style.display = (e === expr) ? 'block' : 'none';
+    });
+}
+
+// ═══════════════════════════════════════════
+// TYPING ANIMATION
+// ═══════════════════════════════════════════
+function typeText(text, onDone) {
+    dlgText.innerHTML = '';
+    dlgHint.style.display = 'none';
+    typing = true;
+    let i = 0;
+    clearInterval(typeTimer);
+    typeTimer = setInterval(() => {
+        i++;
+        dlgText.innerHTML = text.slice(0, i) + '<span class="cursor-blink"></span>';
+        if (i >= text.length) {
+            clearInterval(typeTimer);
+            dlgText.innerHTML = text;
+            typing = false;
+            if (onDone) onDone();
+        }
+    }, 32);
+}
+
+function skipTyping() {
+    clearInterval(typeTimer);
+    const line = currentLines[currentIdx];
+    dlgText.innerHTML = line.text;
+    typing = false;
+    dlgHint.style.display = 'block';
+}
+
+// ═══════════════════════════════════════════
+// DIALOGUE FLOW
+// ═══════════════════════════════════════════
+function showLine(idx) {
+    if (idx >= currentLines.length) return;
+    const line = currentLines[idx];
+    setExpr(line.expr);
+    typeText(line.text, () => {
+        dlgHint.style.display = 'block';
+    });
+}
+
+function advance() {
+    if (typing) { skipTyping(); return; }
+
+    currentIdx++;
+    if (currentIdx >= currentLines.length) {
+        // Dialogue finished
+        if (phase === 'intro' || phase === 'dialogue') {
+            openMenu();
+        }
+    } else {
+        showLine(currentIdx);
+    }
+}
+
+function startDialogue(key) {
+    phase = 'dialogue';
+    menuScreen.classList.remove('open');
+    currentLines = DIALOGUES[key];
+    currentIdx = 0;
+
+    // Grant friendship on first visit (not for intro)
+    if (key !== 'intro' && !visitedTopics.has(key)) {
+        visitedTopics.add(key);
+        setTimeout(() => {
+            friendship = Math.min(100, friendship + FRIENDSHIP_PER_TOPIC);
+            barFill.style.width = friendship + '%';
+            bounceChar();
+            spawnParticles();
+            checkUnlocks();
+        }, 600);
+    }
+
+    showLine(0);
+}
+
+// ═══════════════════════════════════════════
+// MENU
+// ═══════════════════════════════════════════
+function openMenu() {
+    phase = 'menu';
+    menuScreen.classList.add('open');
+    setExpr('happy');
+    dlgHint.style.display = 'none';
+    dlgText.innerHTML = '';
+
+    // Mark visited
+    document.querySelectorAll('.topic-btn[data-topic]').forEach(btn => {
+        const t = btn.getAttribute('data-topic');
+        if (t !== 'secret' && visitedTopics.has(t)) {
+            btn.classList.add('done');
+        }
+    });
+
+    // Check for ending
+    const allMain = ['design','moda','musica','rotina'].every(t => visitedTopics.has(t));
+    if (allMain && visitedTopics.has('secret')) {
+        setTimeout(showEnding, 400);
+    }
+}
+
+// ═══════════════════════════════════════════
+// UNLOCKS
+// ═══════════════════════════════════════════
+function checkUnlocks() {
+    if (friendship >= UNLOCK_SECRET_AT && secretBtn.disabled) {
+        secretBtn.disabled = false;
+        secretBtn.classList.remove('locked');
+        secretBtn.textContent = '🌟  segredo desbloqueado!';
+        notify('✦ novo tópico desbloqueado!');
+    }
+    if (friendship >= 50) {
+        // Could unlock extra things here
+    }
+}
+
+function notify(msg) {
+    // Remove existing
+    document.querySelectorAll('.notif').forEach(n => n.remove());
+    const el = document.createElement('div');
+    el.className = 'notif';
+    el.textContent = msg;
+    screen.appendChild(el);
+    setTimeout(() => {
+        el.style.transition = 'opacity 0.5s';
+        el.style.opacity = '0';
+        setTimeout(() => el.remove(), 500);
+    }, 2500);
+}
+
+// ═══════════════════════════════════════════
+// ENDING
+// ═══════════════════════════════════════════
+function showEnding() {
+    endingScreen.classList.add('open');
+    for (let i = 0; i < 4; i++) {
+        setTimeout(spawnParticles, i * 350);
+    }
+}
+
+// ═══════════════════════════════════════════
+// ANIMATIONS
+// ═══════════════════════════════════════════
+function bounceChar() {
+    charWrap.classList.remove('bounce');
+    void charWrap.offsetWidth;
+    charWrap.classList.add('bounce');
+}
+
+function spawnParticles() {
+    const emojis = ['💗','💕','✨','⭐','🌸','💜'];
+    for (let i = 0; i < 4; i++) {
+        setTimeout(() => {
+            const p = document.createElement('div');
+            p.className = 'particle';
+            p.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+            p.style.left = (Math.random() * window.innerWidth) + 'px';
+            p.style.top  = (Math.random() * 300 + 100) + 'px';
+            document.body.appendChild(p);
+            setTimeout(() => p.remove(), 1500);
+        }, i * 150);
+    }
+}
+
+// ═══════════════════════════════════════════
+// EVENT LISTENERS
+// ═══════════════════════════════════════════
+
+// Start button
+document.getElementById('startBtn').addEventListener('click', () => {
+    startScreen.style.display = 'none';
+    phase = 'intro';
+    startDialogue('intro');
+});
+
+// Topic buttons
+document.querySelectorAll('.topic-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (btn.disabled) return;
+        const topic = btn.getAttribute('data-topic');
+        menuScreen.classList.remove('open');
+        startDialogue(topic);
+    });
+});
+
+// Advance dialogue — click screen or A button
+screen.addEventListener('click', () => {
+    if (phase === 'intro' || phase === 'dialogue') advance();
+});
+document.getElementById('aBtn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (phase === 'intro' || phase === 'dialogue') advance();
+});
+
+// B button — go back to menu from dialogue
+document.getElementById('bBtn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (phase === 'dialogue') {
+        clearInterval(typeTimer);
+        typing = false;
+        openMenu();
+    }
+});
+
+// Keyboard support
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ' || e.key === 'z' || e.key === 'Z') {
+        if (phase === 'intro' || phase === 'dialogue') advance();
+    }
+    if (e.key === 'x' || e.key === 'X' || e.key === 'Escape') {
+        if (phase === 'dialogue') {
+            clearInterval(typeTimer);
+            typing = false;
+            openMenu();
+        }
+    }
+});
+</script>
+
+</body>
+</html>
