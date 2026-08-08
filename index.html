@@ -15,7 +15,6 @@
     --ink:#1a1a1a;
     --screen:#9bbc0f;
     --accent:#e8006a;
-    --header-h:64px;
     --font-ui:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Helvetica,Arial,sans-serif;
   }
 
@@ -37,31 +36,6 @@
   }
 
   a{color:inherit;}
-
-  /* ============ HEADER ============ */
-  .topbar{
-    position:sticky;
-    top:0;
-    z-index:50;
-    height:var(--header-h);
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    padding:0 clamp(16px,4vw,40px);
-    background:transparent;
-  }
-
-  .topbar-link{
-    font-size:12px;
-    font-weight:600;
-    letter-spacing:0.08em;
-    text-transform:uppercase;
-    text-decoration:none;
-    color:var(--ink);
-    transition:opacity .15s ease;
-    white-space:nowrap;
-  }
-  .topbar-link:hover{opacity:0.55;}
 
   /* ============ MADE BY (bottom-left) ============ */
   .madeby{
@@ -104,7 +78,7 @@
 
   /* ============ HERO / STAGE ============ */
   .stage{
-    min-height:calc(100dvh - var(--header-h));
+    min-height:100dvh;
     display:flex;
     align-items:center;
     justify-content:center;
@@ -116,7 +90,7 @@
   .gb-wrap{
     position:relative;
     aspect-ratio:0.606;
-    height:min(88dvh, calc(92vw / 0.606));
+    height:min(94dvh, calc(94vw / 0.606));
   }
 
   .gb-css3d,
@@ -159,14 +133,12 @@
 
   /* ============ MOBILE: fills the screen ============ */
   @media (max-width:640px){
-    .topbar{height:56px;padding:0 16px;}
-    .topbar-link{font-size:10.5px;}
     .stage{
       padding:10px 6px 16px;
-      min-height:calc(100dvh - 56px);
+      min-height:100dvh;
     }
     .gb-wrap{
-      height:min(88dvh, calc(96vw / 0.606));
+      height:min(94dvh, calc(98vw / 0.606));
     }
     .madeby{left:16px;bottom:14px;}
     .madeby-avatar{width:26px;height:26px;font-size:10px;}
@@ -382,11 +354,6 @@
 </head>
 <body>
 
-<header class="topbar">
-  <!-- ✏️ EDITE: coloque seu link real do LinkedIn -->
-  <a class="topbar-link" href="https://www.linkedin.com/" target="_blank" rel="noopener">LinkedIn</a>
-  <a class="topbar-link" href="mailto:sabinoanaju@gmail.com">Email</a>
-</header>
 
 <footer class="madeby">
   <div class="madeby-avatar" aria-hidden="true">A</div>
@@ -668,7 +635,7 @@ function advance(){
 }
 
 function goBack(){
-  if (phase === 'dialogue') {
+  if (phase === 'dialogue' || phase === 'intro') {
     clearInterval(typeTimer);
     typing = false;
     openMenu();
@@ -913,11 +880,16 @@ loader.load('./gameboy.glb', (gltf) => {
   modelSize.multiplyScalar(WORLD_SCALE);
 
   if (screenPanel) screenPanel.visible = false;
+  // screenHolder (the raised bezel around the glass) is left visible on
+  // purpose — it renders as the grey plastic frame around the green
+  // screen, same as the real console. Only the flat glass pane
+  // (screenPanel) is hidden and replaced by the CSS3D content, sized to
+  // the glass's own (smaller) footprint rather than the bezel's.
 
-  if (screenHolder) {
-    screenHolder.updateWorldMatrix(true, false);
-    screenHolder.geometry.computeBoundingBox();
-    const lb = screenHolder.geometry.boundingBox;
+  if (screenPanel) {
+    screenPanel.updateWorldMatrix(true, false);
+    screenPanel.geometry.computeBoundingBox();
+    const lb = screenPanel.geometry.boundingBox;
     const zNudge = lb.max.z || 0.5;
 
     const corners = [
@@ -925,7 +897,7 @@ loader.load('./gameboy.glb', (gltf) => {
       new THREE.Vector3(lb.max.x, lb.min.y, zNudge),
       new THREE.Vector3(lb.max.x, lb.max.y, zNudge),
       new THREE.Vector3(lb.min.x, lb.max.y, zNudge),
-    ].map(v => screenHolder.localToWorld(v));
+    ].map(v => screenPanel.localToWorld(v));
 
     const screenCenter = new THREE.Vector3();
     corners.forEach(c => screenCenter.add(c));
@@ -934,21 +906,19 @@ loader.load('./gameboy.glb', (gltf) => {
     const screenWidth = corners[0].distanceTo(corners[1]);
     const screenHeight = corners[1].distanceTo(corners[2]);
     const screenQuat = new THREE.Quaternion();
-    screenHolder.getWorldQuaternion(screenQuat);
-
-    screenHolder.visible = false;
+    screenPanel.getWorldQuaternion(screenQuat);
 
     // The shell has a thin structural rim inside the screen cavity that
-    // becomes visible once the glass/bezel meshes are hidden — a flat
-    // colored "patch" mesh used to cover it, but that just hid whatever
-    // game UI happened to sit behind it instead. Punch a proper hole with
-    // the stencil buffer: a dedicated rect (guaranteed solid, unlike
-    // screenHolder's own geometry which may not be) writes a stencil
-    // marker over the LCD area, and every other opaque mesh discards
-    // fragments there, so nothing behind the glass can show through it
-    // regardless of camera angle or what shape happens to be back there.
+    // becomes visible once the glass mesh is hidden — a flat colored
+    // "patch" mesh used to cover it, but that just hid whatever game UI
+    // happened to sit behind it instead. Punch a proper hole with the
+    // stencil buffer: a dedicated rect (guaranteed solid, unlike
+    // screenPanel's own geometry which may not be) writes a stencil
+    // marker over the LCD area, and every other opaque mesh (including
+    // the now-visible bezel) discards fragments there, so nothing behind
+    // the glass can show through it regardless of camera angle.
     const stencilLocalPos = new THREE.Vector3((lb.min.x + lb.max.x) / 2, (lb.min.y + lb.max.y) / 2, zNudge);
-    const stencilWorldPos = screenHolder.localToWorld(stencilLocalPos.clone());
+    const stencilWorldPos = screenPanel.localToWorld(stencilLocalPos.clone());
     const stencilGeo = new THREE.PlaneGeometry(screenWidth / WORLD_SCALE, screenHeight / WORLD_SCALE);
     const stencilMat = new THREE.MeshBasicMaterial({
       colorWrite: false, depthWrite: false,
@@ -1086,6 +1056,17 @@ function getDpadDirection(point){
     : (local.x > 0 ? 'right' : 'left');
 }
 
+// The model has a single combined mesh ("select_low") spanning both the
+// SELECT and START oblong buttons — split it by local x to tell which
+// physical button was actually pressed (right half is START).
+const SELECT_START_MID_X = -5.05;
+function getSelectStartSide(point){
+  const node = controlNodes['select_low'];
+  if (!node || !point) return null;
+  const local = node.worldToLocal(point.clone());
+  return local.x > SELECT_START_MID_X ? 'start' : 'select';
+}
+
 let powerOn = true;
 
 /* ---- tactile feedback: click sound + button sinks in, then springs back ---- */
@@ -1158,9 +1139,9 @@ function handleControl(hit){
       else if (phase === 'menu') confirmMenuFocus();
       break;
     case 'select_low':
-      if (phase === 'start') beginGame();
-      else if (phase === 'intro' || phase === 'dialogue') advance();
-      else if (phase === 'menu') confirmMenuFocus();
+      // Select (left half) does nothing in this game — only Start (right
+      // half) begins it.
+      if (getSelectStartSide(hit.point) === 'start' && phase === 'start') beginGame();
       break;
     case 'a_low':
       goBack();
