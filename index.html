@@ -212,86 +212,85 @@
   }
   .gbscr-lcd.gb-off{filter:brightness(0);}
 
-  .gbscr-room{
+  /* ---- animated background scene: a 9-frame strip (desk/lamp/shelf,
+     lamp glow pulsing) played as a CSS sprite via steps(), matching the
+     illustrated art instead of hand-built decor shapes ---- */
+  .gbscr-scene{
     position:absolute;inset:0;
-    background:var(--g3);
+    background-color:var(--g3);
+    background-image:url('./scene-bg.png');
+    background-repeat:no-repeat;
+    background-position:0 0;
+    /* Pixel size, not a percentage — percentage background-size silently
+       fails to paint at all once this element sits under the CSS3D
+       renderer's matrix3d transform (percentage background-position in
+       the keyframes has the same issue, so those are pixel values too).
+       380px is .gbscr-lcd's fixed content width, so 9 frames = 3420px. */
+    background-size:3420px 288px;
+    image-rendering:pixelated;
+    animation:gbSceneStrip 1.17s steps(9) infinite;
   }
-  .gbscr-floor{
-    position:absolute;left:0;right:0;bottom:94px;height:2px;
-    background:var(--g0);opacity:.25;
-  }
-
-  /* ---- shelf + potted plant, top-left ---- */
-  .gbscr-shelf{
-    position:absolute;left:26px;top:112px;width:68px;height:6px;
-    background:var(--g0);opacity:.22;border-radius:1px;
-  }
-  .gbscr-plant{position:absolute;left:30px;top:62px;width:22px;height:52px;}
-  .gbscr-plant-pot{
-    position:absolute;left:2px;top:34px;width:16px;height:16px;
-    background:var(--g0);opacity:.4;border-radius:2px 2px 5px 5px;
-  }
-  .gbscr-plant-leaf{
-    position:absolute;width:13px;height:13px;background:var(--g1);
-    opacity:.7;border-radius:50%;
-  }
-  .gbscr-plant-leaf--l{left:-4px;top:16px;}
-  .gbscr-plant-leaf--c{left:4px;top:0;}
-  .gbscr-plant-leaf--r{left:11px;top:16px;}
-
-  /* ---- framed cat portraits, right wall ---- */
-  .gbscr-frame{
-    position:absolute;background:rgba(15,56,15,.18);border-radius:3px;
-  }
-  .gbscr-frame--a{left:277px;top:112px;width:35px;height:48px;}
-  .gbscr-frame--b{
-    left:325px;top:84px;width:35px;height:48px;
-    display:flex;flex-direction:column;align-items:center;justify-content:space-evenly;
-    padding:6px 0;
-  }
-  .gbscr-cat{position:relative;background:var(--g0);opacity:.4;border-radius:4px;}
-  .gbscr-cat::before,
-  .gbscr-cat::after{
-    content:'';position:absolute;top:-60%;width:0;height:0;
-    border-left:5px solid transparent;border-right:5px solid transparent;
-    border-bottom:7px solid var(--g0);
-  }
-  .gbscr-cat::before{left:8%;}
-  .gbscr-cat::after{right:8%;}
-  .gbscr-cat--big{width:21px;height:17px;margin:18px auto 0;}
-  .gbscr-cat--sm{width:14px;height:11px;}
-  .gbscr-cat--sm::before,
-  .gbscr-cat--sm::after{
-    border-left-width:3px;border-right-width:3px;border-bottom-width:5px;
+  @keyframes gbSceneStrip{
+    from{background-position-x:0;}
+    to{background-position-x:-3420px;}
   }
 
   .gbscr-hud{
     position:absolute;top:8px;left:50%;transform:translateX(-50%);
     width:190px;z-index:6;text-align:center;
   }
-  .gbscr-hud-row{
-    display:flex;align-items:center;justify-content:center;gap:5px;margin-bottom:4px;
-  }
-  .gbscr-heart{flex:none;display:block;}
   .gbscr-hud-label{
-    font-size:7.5px;color:var(--g0);letter-spacing:1px;
+    font-size:7.5px;color:var(--g0);letter-spacing:1px;margin-bottom:5px;
+  }
+  /* Heart + bar are one piece: the heart sits half-overlapping the bar's
+     left end, same as the reference, and stays a plain solid icon — only
+     the bar itself (and the "+N pts" line below) carries the progress. */
+  .gbscr-bar-row{
+    position:relative;height:19px;
+  }
+  .gbscr-heart-wrap{
+    position:absolute;left:0;top:50%;transform:translateY(-50%);
+    width:23px;height:20px;z-index:2;
   }
   .gbscr-bar-bg{
-    height:8px;background:rgba(15,56,15,.22);border:1px solid var(--g0);border-radius:3px;overflow:hidden;
+    position:absolute;left:13px;right:0;top:50%;transform:translateY(-50%);
+    height:14px;background:rgba(0,0,0,.25);border-radius:7px;overflow:hidden;
   }
   .gbscr-bar-fill{
-    height:100%;width:0%;background:var(--g0);border-radius:2px;
+    display:block;height:100%;width:0%;background:#5A6F40;
     transition:width .8s cubic-bezier(.34,1.56,.64,1);
   }
   .gbscr-hud-notif{
-    font-size:6.5px;color:var(--g1);letter-spacing:.5px;margin-top:4px;
+    font-size:6.5px;color:var(--g1);letter-spacing:.5px;margin-top:5px;
     height:8px;opacity:0;transition:opacity .4s ease;
   }
   .gbscr-hud-notif.show{opacity:1;}
 
   .gbscr-char-wrap{
-    position:absolute;bottom:94px;left:50%;transform:translateX(-50%);
+    /* Deliberately overlapping the dialogue box's top edge (not just
+       touching it) so she reads as grounded/standing behind it rather
+       than floating above it — the dialogue panel's z-index already
+       covers her lower half. Anchored left of center to sit in front of
+       the monitor instead of dead-center. */
+    position:absolute;bottom:46px;left:41%;transform:translateX(-50%);
+    z-index:5;
     transition:transform .3s ease;
+  }
+  .gbscr-char-anim{
+    /* Cropped waist-up (legs cut off) and displayed above native pixel
+       size, so she reads as standing right up against the desk/camera
+       instead of a small full-body figure lost in the scene. */
+    width:252px;height:174px;
+    background-image:url('./doll-default.png');
+    background-repeat:no-repeat;
+    background-size:2268px 174px;
+    image-rendering:pixelated;
+    animation:gbCharStrip 1.17s steps(9) infinite;
+    transition:opacity .16s ease;
+  }
+  @keyframes gbCharStrip{
+    from{background-position-x:0;}
+    to{background-position-x:-2268px;}
   }
   .gbscr-char-wrap.bounce{animation:gbCharBounce .5s ease;}
   @keyframes gbCharBounce{
@@ -390,7 +389,18 @@
     gap:8px;padding:20px;text-align:center;
   }
   .gbscr-ending.open{display:flex;}
-  .gbscr-end-face{display:block;}
+  .gbscr-end-face{
+    width:96px;height:90px;
+    background-image:url('./doll-jumping.png');
+    background-repeat:no-repeat;
+    background-size:864px 90px;
+    image-rendering:pixelated;
+    animation:gbEndFaceStrip 1.17s steps(9) infinite;
+  }
+  @keyframes gbEndFaceStrip{
+    from{background-position-x:0;}
+    to{background-position-x:-864px;}
+  }
   .gbscr-end-title{font-size:11px;color:var(--g0);line-height:1.8;}
   .gbscr-end-msg{font-size:7.5px;color:var(--g1);line-height:2;}
   .gbscr-end-links{display:flex;flex-direction:column;gap:7px;margin-top:4px;width:100%;}
@@ -456,79 +466,23 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 const SCREEN_HTML = `
 <div class="gbscr" id="gbscr">
   <div class="gbscr-lcd" id="gbLcd">
-  <div class="gbscr-room">
-    <div class="gbscr-shelf"></div>
-    <div class="gbscr-plant">
-      <div class="gbscr-plant-pot"></div>
-      <div class="gbscr-plant-leaf gbscr-plant-leaf--l"></div>
-      <div class="gbscr-plant-leaf gbscr-plant-leaf--c"></div>
-      <div class="gbscr-plant-leaf gbscr-plant-leaf--r"></div>
-    </div>
-    <div class="gbscr-frame gbscr-frame--a">
-      <div class="gbscr-cat gbscr-cat--big"></div>
-    </div>
-    <div class="gbscr-frame gbscr-frame--b">
-      <div class="gbscr-cat gbscr-cat--sm"></div>
-      <div class="gbscr-cat gbscr-cat--sm"></div>
-    </div>
-  </div>
-  <div class="gbscr-floor"></div>
+  <div class="gbscr-scene"></div>
 
   <div class="gbscr-hud">
-    <div class="gbscr-hud-row">
-      <svg class="gbscr-heart" width="13" height="11" viewBox="0 0 16 14" xmlns="http://www.w3.org/2000/svg">
-        <path d="M8 13 C2 9 0 6 0 3.5 C0 1.2 2 0 4 0 C5.6 0 7 .9 8 2.3 C9 .9 10.4 0 12 0 C14 0 16 1.2 16 3.5 C16 6 14 9 8 13 Z" fill="#0f380f"/>
-      </svg>
-      <div class="gbscr-hud-label">nível de amizade</div>
+    <div class="gbscr-hud-label">nível de amizade</div>
+    <div class="gbscr-bar-row">
+      <div class="gbscr-heart-wrap">
+        <svg viewBox="0 0 24 21" xmlns="http://www.w3.org/2000/svg">
+          <path d="M17.7654 0.505859C18.9361 0.561227 20.1448 1.0069 21.2878 2.05469C23.636 4.20736 23.7008 7.70304 22.0486 11.0303C20.3881 14.3742 16.9559 17.6745 12.0466 19.6562L11.7 19.7959L11.5115 19.5586C6.67026 17.5719 3.282 14.3122 1.6355 11.0078C-0.0171151 7.69088 0.0482781 4.20685 2.39624 2.05469C3.5392 1.00697 4.74708 0.561229 5.91772 0.505859C7.07691 0.451036 8.16531 0.779492 9.08472 1.22168C10.0051 1.66435 10.7788 2.23214 11.3201 2.68457C11.5289 2.85914 11.7039 3.01864 11.8416 3.14844C11.9791 3.01865 12.1542 2.85918 12.363 2.68457C12.9043 2.2321 13.6789 1.66438 14.5994 1.22168C15.5186 0.779606 16.6065 0.451155 17.7654 0.505859Z" fill="#5A6F40" stroke="#A0C571"/>
+        </svg>
+      </div>
+      <div class="gbscr-bar-bg"><div class="gbscr-bar-fill" id="barFill"></div></div>
     </div>
-    <div class="gbscr-bar-bg"><div class="gbscr-bar-fill" id="barFill"></div></div>
     <div class="gbscr-hud-notif" id="hudNotif"></div>
   </div>
 
   <div class="gbscr-char-wrap" id="charWrap">
-    <svg width="66" height="86" viewBox="0 0 78 100" xmlns="http://www.w3.org/2000/svg">
-      <ellipse cx="39" cy="28" rx="24" ry="22" fill="#0f380f"/>
-      <rect x="14" y="26" width="9" height="34" rx="4.5" fill="#0f380f"/>
-      <rect x="55" y="26" width="9" height="32" rx="4.5" fill="#0f380f"/>
-      <rect x="33" y="50" width="12" height="9" fill="#cfe6a0"/>
-      <rect x="17" y="58" width="44" height="38" rx="7" fill="#306230"/>
-      <rect x="31" y="58" width="16" height="4" rx="2" fill="#0f380f"/>
-      <rect x="5"  y="60" width="14" height="9" rx="4.5" fill="#306230"/>
-      <rect x="59" y="60" width="14" height="9" rx="4.5" fill="#306230"/>
-      <circle cx="11" cy="69" r="4" fill="#cfe6a0"/>
-      <circle cx="67" cy="69" r="4" fill="#cfe6a0"/>
-      <ellipse cx="39" cy="36" rx="20" ry="20" fill="#cfe6a0"/>
-      <path d="M 19 28 Q 39 12 59 28 Q 55 16 39 14 Q 23 16 19 28" fill="#0f380f"/>
-      <path d="M 20 26 Q 25 36 22 40" stroke="#0f380f" stroke-width="5" fill="none" stroke-linecap="round"/>
-      <path d="M 58 26 Q 53 36 56 40" stroke="#0f380f" stroke-width="5" fill="none" stroke-linecap="round"/>
-
-      <g id="expr-happy">
-        <path d="M 29 34 Q 33 30 37 34" stroke="#0f380f" stroke-width="2" fill="none" stroke-linecap="round"/>
-        <path d="M 41 34 Q 45 30 49 34" stroke="#0f380f" stroke-width="2" fill="none" stroke-linecap="round"/>
-        <circle cx="28" cy="43" r="5" fill="#306230" opacity="0.4"/>
-        <circle cx="50" cy="43" r="5" fill="#306230" opacity="0.4"/>
-        <path d="M 33 45 Q 39 50 45 45" stroke="#0f380f" stroke-width="1.8" fill="none" stroke-linecap="round"/>
-      </g>
-      <g id="expr-excited" style="display:none">
-        <circle cx="33" cy="33" r="5" fill="#0f380f"/>
-        <circle cx="45" cy="33" r="5" fill="#0f380f"/>
-        <circle cx="35" cy="31" r="2" fill="#cfe6a0"/>
-        <circle cx="47" cy="31" r="2" fill="#cfe6a0"/>
-        <circle cx="28" cy="43" r="5" fill="#306230" opacity="0.35"/>
-        <circle cx="50" cy="43" r="5" fill="#306230" opacity="0.35"/>
-        <path d="M 32 46 Q 39 52 46 46" stroke="#0f380f" stroke-width="2" fill="none" stroke-linecap="round"/>
-        <text x="10" y="18" font-size="9" fill="#0f380f" style="font-family:sans-serif">✦</text>
-        <text x="58" y="14" font-size="7" fill="#0f380f" style="font-family:sans-serif">✦</text>
-      </g>
-      <g id="expr-shy" style="display:none">
-        <path d="M 29 35 Q 33 31 37 35" stroke="#0f380f" stroke-width="2" fill="none" stroke-linecap="round"/>
-        <path d="M 41 35 Q 45 31 49 35" stroke="#0f380f" stroke-width="2" fill="none" stroke-linecap="round"/>
-        <circle cx="28" cy="43" r="6" fill="#306230" opacity="0.55"/>
-        <circle cx="50" cy="43" r="6" fill="#306230" opacity="0.55"/>
-        <path d="M 34 46 Q 39 49 44 46" stroke="#0f380f" stroke-width="1.8" fill="none" stroke-linecap="round"/>
-        <ellipse cx="56" cy="26" rx="2" ry="3" fill="#cfe6a0" opacity="0.8"/>
-      </g>
-    </svg>
+    <div class="gbscr-char-anim" id="charAnim"></div>
   </div>
 
   <div class="gbscr-dialogue" id="dialogueBox">
@@ -561,19 +515,7 @@ const SCREEN_HTML = `
   </div>
 
   <div class="gbscr-ending" id="endingScreen">
-    <svg class="gbscr-end-face" width="64" height="60" viewBox="0 0 78 74" xmlns="http://www.w3.org/2000/svg">
-      <ellipse cx="39" cy="34" rx="24" ry="22" fill="#0f380f"/>
-      <rect x="14" y="32" width="9" height="30" rx="4.5" fill="#0f380f"/>
-      <rect x="55" y="32" width="9" height="28" rx="4.5" fill="#0f380f"/>
-      <ellipse cx="39" cy="42" rx="20" ry="20" fill="#cfe6a0"/>
-      <path d="M 19 34 Q 39 18 59 34 Q 55 22 39 20 Q 23 22 19 34" fill="#0f380f"/>
-      <path d="M 28 39 Q 33 35 38 39" stroke="#0f380f" stroke-width="2.2" fill="none" stroke-linecap="round"/>
-      <circle cx="49" cy="39" r="3" fill="#0f380f"/>
-      <path d="M 33 50 Q 39 55 45 50" stroke="#0f380f" stroke-width="2" fill="none" stroke-linecap="round"/>
-      <ellipse cx="39" cy="53" rx="4" ry="3" fill="#306230"/>
-      <circle cx="27" cy="48" r="4.5" fill="#306230" opacity="0.4"/>
-      <circle cx="51" cy="48" r="4.5" fill="#306230" opacity="0.4"/>
-    </svg>
+    <div class="gbscr-end-face"></div>
     <div class="gbscr-end-title">obaaa! agora somos amigos</div>
     <div class="gbscr-end-msg">obrigada por me conhecer.<br>adorei nossa conversa ;)</div>
     <div class="gbscr-end-links">
@@ -613,8 +555,8 @@ const DIALOGUES = {
   ],
   secret: [
     { text: "Okay, confissão...", expr: 'shy' },
-    { text: "Eu repito a mesma música no loop por dias inteiros sem perceber.", expr: 'shy' },
-    { text: "Dias. Semanas. É um problema? Talvez. 🎧", expr: 'excited' }
+    { text: "Eu tenho dois gatos e mostro foto deles pra qualquer pessoa que fica 5 minutos comigo.", expr: 'cats' },
+    { text: "Não peço desculpa. Eles são perfeitos. 🐾", expr: 'cats' }
   ]
 };
 
@@ -629,13 +571,14 @@ let typing = false;
 let typeTimer = null;
 let phase = 'loading';
 
-let screenEl, barFill, charWrap, dlgText, dlgHint, menuScreen, startScreen, endingScreen, secretBtn,
+let screenEl, barFill, charWrap, charAnim, dlgText, dlgHint, menuScreen, startScreen, endingScreen, secretBtn,
     loadingScreen, bootBarFill, hudNotif;
 
 function initGame(root){
   screenEl     = root.querySelector('#gbLcd');
   barFill      = root.querySelector('#barFill');
   charWrap     = root.querySelector('#charWrap');
+  charAnim     = root.querySelector('#charAnim');
   dlgText      = root.querySelector('#dlgText');
   dlgHint      = root.querySelector('#dlgHint');
   menuScreen   = root.querySelector('#menuScreen');
@@ -704,11 +647,30 @@ function beginGame(){
   startDialogue('intro');
 }
 
+// Three animated poses exist (default, jumping, cats) — "excited" plays
+// the jump celebration, "cats" plays her holding the cats for the secret
+// reveal, and everything else (happy/shy) falls back to the default
+// speaking loop, which is also where every animation returns to.
+const CHAR_ANIM_SRC = {
+  default: './doll-default.png',
+  jumping: './doll-jumping.png',
+  cats: './doll-cats.png',
+};
+let currentCharAnim = 'default';
+function setCharAnim(name){
+  if (name === currentCharAnim || !CHAR_ANIM_SRC[name]) return;
+  currentCharAnim = name;
+  charAnim.style.opacity = '0';
+  setTimeout(() => {
+    charAnim.style.backgroundImage = `url('${CHAR_ANIM_SRC[name]}')`;
+    charAnim.style.animation = 'none';
+    void charAnim.offsetWidth;
+    charAnim.style.animation = '';
+    charAnim.style.opacity = '1';
+  }, 160);
+}
 function setExpr(expr){
-  ['happy','excited','shy'].forEach(e => {
-    const el = screenEl.querySelector('#expr-' + e);
-    if (el) el.style.display = (e === expr) ? 'block' : 'none';
-  });
+  setCharAnim(expr === 'excited' ? 'jumping' : expr === 'cats' ? 'cats' : 'default');
 }
 
 function typeText(text, onDone){
@@ -762,6 +724,10 @@ function goBack(){
   }
 }
 
+function updateFriendshipBar(pct){
+  barFill.style.width = pct + '%';
+}
+
 function startDialogue(key){
   phase = 'dialogue';
   menuScreen.classList.remove('open');
@@ -772,7 +738,7 @@ function startDialogue(key){
     visitedTopics.add(key);
     setTimeout(() => {
       friendship = Math.min(100, friendship + FRIENDSHIP_PER_TOPIC);
-      barFill.style.width = friendship + '%';
+      updateFriendshipBar(friendship);
       bounceChar();
       spawnParticles();
       showHudNotif('+' + FRIENDSHIP_PER_TOPIC + ' pts');
