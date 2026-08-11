@@ -212,27 +212,9 @@
   }
   .gbscr-lcd.gb-off{filter:brightness(0);}
 
-  /* ---- animated background scene: a 9-frame strip (desk/lamp/shelf,
-     lamp glow pulsing) played as a CSS sprite via steps(), matching the
-     illustrated art instead of hand-built decor shapes ---- */
   .gbscr-scene{
     position:absolute;inset:0;
     background-color:var(--g3);
-    background-image:url('./scenebg.png');
-    background-repeat:no-repeat;
-    background-position:0 0;
-    /* Pixel size, not a percentage — percentage background-size silently
-       fails to paint at all once this element sits under the CSS3D
-       renderer's matrix3d transform (percentage background-position in
-       the keyframes has the same issue, so those are pixel values too).
-       380px is .gbscr-lcd's fixed content width, so 9 frames = 3420px. */
-    background-size:3420px 288px;
-    image-rendering:pixelated;
-    animation:gbSceneStrip 1.17s steps(9) infinite;
-  }
-  @keyframes gbSceneStrip{
-    from{background-position-x:0;}
-    to{background-position-x:-3420px;}
   }
 
   .gbscr-hud{
@@ -285,7 +267,10 @@
     background-repeat:no-repeat;
     background-size:2268px 174px;
     image-rendering:pixelated;
-    animation:gbCharStrip 1.17s steps(9) infinite;
+    /* Plays through once per line (retriggered in JS) and settles back
+       on the resting frame instead of looping forever — she "expresses"
+       when a line starts, then holds still while it's being read. */
+    animation:gbCharStrip 1.17s steps(9) 1;
     transition:opacity .16s ease;
   }
   @keyframes gbCharStrip{
@@ -395,7 +380,7 @@
     background-repeat:no-repeat;
     background-size:864px 90px;
     image-rendering:pixelated;
-    animation:gbEndFaceStrip 1.17s steps(9) infinite;
+    animation:gbEndFaceStrip 1.17s steps(9) 1 forwards;
   }
   @keyframes gbEndFaceStrip{
     from{background-position-x:0;}
@@ -657,15 +642,26 @@ const CHAR_ANIM_SRC = {
   cats: './dollcats.png',
 };
 let currentCharAnim = 'default';
+function replayCharAnim(){
+  charAnim.style.animation = 'none';
+  void charAnim.offsetWidth;
+  charAnim.style.animation = '';
+}
+// Called once per dialogue line, not just on pose change, so she plays
+// the little "expression" motion fresh for every line (the CSS animation
+// itself runs once then settles — see .gbscr-char-anim) instead of either
+// looping forever or staying frozen across a run of same-pose lines.
 function setCharAnim(name){
-  if (name === currentCharAnim || !CHAR_ANIM_SRC[name]) return;
+  if (!CHAR_ANIM_SRC[name]) return;
+  if (name === currentCharAnim) {
+    replayCharAnim();
+    return;
+  }
   currentCharAnim = name;
   charAnim.style.opacity = '0';
   setTimeout(() => {
     charAnim.style.backgroundImage = `url('${CHAR_ANIM_SRC[name]}')`;
-    charAnim.style.animation = 'none';
-    void charAnim.offsetWidth;
-    charAnim.style.animation = '';
+    replayCharAnim();
     charAnim.style.opacity = '1';
   }, 160);
 }
