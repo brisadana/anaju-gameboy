@@ -252,9 +252,8 @@
     /* Deliberately overlapping the dialogue box's top edge (not just
        touching it) so she reads as grounded/standing behind it rather
        than floating above it — the dialogue panel's z-index already
-       covers her lower half. Anchored left of center to sit in front of
-       the monitor instead of dead-center. */
-    position:absolute;bottom:46px;left:41%;transform:translateX(-50%);
+       covers her lower half. */
+    position:absolute;bottom:46px;left:50%;transform:translateX(-50%);
     z-index:5;
     transition:transform .3s ease;
   }
@@ -362,7 +361,6 @@
   .gbscr-title{
     font-size:18px;color:var(--g0);letter-spacing:2px;text-align:center;
   }
-  .gbscr-sub{font-size:7.5px;color:var(--g1);letter-spacing:2px;}
   .gbscr-press-hint{
     font-family:'Press Start 2P',monospace;font-size:8px;color:var(--g0);
     letter-spacing:1px;margin-top:6px;animation:gbBlink 1.1s infinite;
@@ -375,16 +373,13 @@
   }
   .gbscr-ending.open{display:flex;}
   .gbscr-end-face{
-    width:96px;height:90px;
-    background-image:url('./dolljumping.png');
+    /* Static close-up of just her head, smiling — no animation, unlike the
+       in-game sprite strips. */
+    width:101px;height:107px;
+    background-image:url('./dollhappyhead.png');
     background-repeat:no-repeat;
-    background-size:864px 90px;
+    background-size:101px 107px;
     image-rendering:pixelated;
-    animation:gbEndFaceStrip 1.17s steps(9) 1 forwards;
-  }
-  @keyframes gbEndFaceStrip{
-    from{background-position-x:0;}
-    to{background-position-x:-864px;}
   }
   .gbscr-end-title{font-size:11px;color:var(--g0);line-height:1.8;}
   .gbscr-end-msg{font-size:7.5px;color:var(--g1);line-height:2;}
@@ -392,6 +387,20 @@
   .gbscr-end-link{
     font-family:'Press Start 2P',monospace;font-size:7.5px;color:var(--g0);
     text-decoration:none;background:rgba(15,56,15,.14);padding:9px 12px;border-radius:5px;
+    position:relative;transition:all .12s ease;
+  }
+  /* Operable via the physical D-pad + A button, same focus language as the
+     topic menu, so the ending links aren't mouse-only. */
+  .gbscr-end-link.focused{
+    background:var(--g0);color:var(--g4);
+  }
+  .gbscr-end-link.focused::before{
+    content:'▶';position:absolute;left:6px;top:50%;transform:translateY(-50%);
+    font-size:7px;animation:gbBlink .8s infinite;
+  }
+  .gbscr-end-link.focused::after{
+    content:'◀';position:absolute;right:6px;top:50%;transform:translateY(-50%);
+    font-size:7px;animation:gbBlink .8s infinite;
   }
 
   .gbscr-particle{
@@ -481,10 +490,11 @@ const SCREEN_HTML = `
   <div class="gbscr-menu" id="menuScreen">
     <div class="gbscr-menu-heading">o que você quer saber?</div>
     <button class="gbscr-topic" data-topic="design">design &amp; trabalho</button>
-    <button class="gbscr-topic" data-topic="moda">moda &amp; estilo</button>
-    <button class="gbscr-topic" data-topic="musica">o que eu ouço</button>
     <button class="gbscr-topic" data-topic="rotina">rotina &amp; vida</button>
-    <button class="gbscr-topic" data-topic="secret" id="secretBtn" disabled>???</button>
+    <button class="gbscr-topic" data-topic="hobbies">hobbies</button>
+    <button class="gbscr-topic" data-topic="gatos" data-label="gatos" disabled>???</button>
+    <button class="gbscr-topic" data-topic="comida" data-label="comida" disabled>???</button>
+    <button class="gbscr-topic" data-topic="segredo" data-label="segredo" disabled>???</button>
   </div>
 
   <div class="gbscr-loading" id="loadingScreen">
@@ -495,7 +505,6 @@ const SCREEN_HTML = `
 
   <div class="gbscr-start" id="startScreen">
     <div class="gbscr-title">ANA.EXE</div>
-    <div class="gbscr-sub">um friendship sim</div>
     <div class="gbscr-press-hint">▼ pressione START</div>
   </div>
 
@@ -503,10 +512,10 @@ const SCREEN_HTML = `
     <div class="gbscr-end-face"></div>
     <div class="gbscr-end-title">obaaa! agora somos amigos</div>
     <div class="gbscr-end-msg">obrigada por me conhecer.<br>adorei nossa conversa ;)</div>
-    <div class="gbscr-end-links">
+    <div class="gbscr-end-links" id="endLinks">
       <!-- ✏️ EDITE: coloque seu link real do LinkedIn -->
-      <a href="https://www.linkedin.com/" target="_blank" class="gbscr-end-link">linkedin</a>
-      <a href="mailto:sabinoanaju@gmail.com" class="gbscr-end-link">email</a>
+      <a href="https://www.linkedin.com/" target="_blank" class="gbscr-end-link" data-end-link>linkedin</a>
+      <a href="mailto:sabinoanaju@gmail.com" class="gbscr-end-link" data-end-link>email</a>
     </div>
   </div>
   </div>
@@ -516,37 +525,42 @@ const DIALOGUES = {
   intro: [
     { text: "Oi! Eu sou a Ana.", expr: 'happy' },
     { text: "Parece que você caiu no meu mundo por acidente...", expr: 'shy' },
-    { text: "Que tal ficar um pouco? Prometo que é divertido ✨", expr: 'excited' }
+    { text: "Que tal ficar um pouco? Prometo que é divertido", expr: 'excited' }
   ],
   design: [
-    { text: "Ah, design! Meu lugar favorito.", expr: 'excited' },
-    { text: "Trabalho com UX/UI — adoro quando uma solução simples resolve algo complexo.", expr: 'happy' },
-    { text: "É tipo resolver um puzzle, mas o puzzle são as pessoas. 🎨", expr: 'excited' }
-  ],
-  moda: [
-    { text: "Moda pra mim é expressão, não tendência.", expr: 'happy' },
-    { text: "Amo misturar peças vintage com coisas mais modernas...", expr: 'shy' },
-    { text: "O look perfeito é aquele que muda como você anda. 👗", expr: 'excited' }
-  ],
-  musica: [
-    { text: "Hmm, minha playlist é um caos honesto.", expr: 'happy' },
-    { text: "Indie, bossa nova, hyperpop, jazz às 3am...", expr: 'excited' },
-    { text: "Depende completamente do humor. 🎵", expr: 'shy' }
+    { text: "Quatro anos como product designer e ainda fico feliz quando um protótipo funciona de primeira.", expr: 'happy' },
+    { text: "Penso visualmente em tudo. Até reorganizo mentalmente o layout das coisas enquanto converso.", expr: 'excited' },
+    { text: "Mas o que eu mais gosto mesmo é resolver problema com bom humor no caminho.", expr: 'happy' }
   ],
   rotina: [
-    { text: "Sou definitivamente uma pessoa da tarde.", expr: 'shy' },
-    { text: "Café é obrigatório. Completamente não negociável.", expr: 'excited' },
-    { text: "Começo devagar e termino em modo turbo. ☕", expr: 'happy' }
+    { text: "Sou do interior e isso explica muita coisa sobre mim.", expr: 'shy' },
+    { text: "Não existo de manhã. Só ligo de verdade depois de um café e de ver o sol.", expr: 'happy' }
   ],
-  secret: [
-    { text: "Okay, confissão...", expr: 'shy' },
-    { text: "Eu tenho dois gatos e mostro foto deles pra qualquer pessoa que fica 5 minutos comigo.", expr: 'cats' },
-    { text: "Não peço desculpa. Eles são perfeitos. 🐾", expr: 'cats' }
+  hobbies: [
+    { text: "Jardinagem, crochê e jogos. Parece que não combina, né?", expr: 'happy' },
+    { text: "Acho que só gosto de coisas que pedem paciência.", expr: 'shy' }
+  ],
+  gatos: [
+    { text: "Tenho quatro gatos: Francisco, Frederico, Alvinho e Sombra.", expr: 'cats' },
+    { text: "Cada um com personalidade muito própria.", expr: 'cats' }
+  ],
+  comida: [
+    { text: "Minha comida favorita do mundo, sem sombra de dúvida, é churrasco.", expr: 'happy' },
+    { text: "Não tem dia ruim que um bom churrasco não resolva.", expr: 'excited' },
+    { text: "Não recuso convite pra um churrasco", expr: 'happy' }
+  ],
+  segredo: [
+    { text: "Tenho quatro gatos, plantas em todo canto e crochê no sofá.", expr: 'cats' },
+    { text: "Tecnicamente virei a tia da casa cheia de gato antes dos 30.", expr: 'shy' },
+    { text: "E honestamente? Eu amo.", expr: 'excited' }
   ]
 };
 
-const FRIENDSHIP_PER_TOPIC = 20;
-const UNLOCK_SECRET_AT = 25;
+// Design & trabalho / Rotina & vida / Hobbies are always available; visiting
+// all three unlocks Gatos, Comida and Segredo together.
+const BASE_TOPICS = ['design', 'rotina', 'hobbies'];
+const LOCKED_TOPICS = ['gatos', 'comida', 'segredo'];
+const FRIENDSHIP_PER_TOPIC = 15;
 
 let friendship = 0;
 let visitedTopics = new Set();
@@ -556,8 +570,8 @@ let typing = false;
 let typeTimer = null;
 let phase = 'loading';
 
-let screenEl, barFill, charWrap, charAnim, dlgText, dlgHint, menuScreen, startScreen, endingScreen, secretBtn,
-    loadingScreen, bootBarFill, hudNotif;
+let screenEl, barFill, charWrap, charAnim, dlgText, dlgHint, menuScreen, startScreen, endingScreen,
+    loadingScreen, bootBarFill, hudNotif, endLinkEls;
 
 function initGame(root){
   screenEl     = root.querySelector('#gbLcd');
@@ -569,10 +583,10 @@ function initGame(root){
   menuScreen   = root.querySelector('#menuScreen');
   startScreen  = root.querySelector('#startScreen');
   endingScreen = root.querySelector('#endingScreen');
-  secretBtn    = root.querySelector('#secretBtn');
   loadingScreen= root.querySelector('#loadingScreen');
   bootBarFill  = root.querySelector('#bootBarFill');
   hudNotif     = root.querySelector('#hudNotif');
+  endLinkEls   = Array.from(root.querySelectorAll('[data-end-link]'));
 
   root.querySelectorAll('.gbscr-topic').forEach(btn => {
     btn.addEventListener('click', (e) => {
@@ -584,6 +598,13 @@ function initGame(root){
     });
   });
 
+  // The ending's LinkedIn/email links are real <a> tags (so they still work
+  // with a plain mouse click), but also need to be reachable with the
+  // physical D-pad + A button like everything else in the game.
+  endLinkEls.forEach((el, i) => {
+    el.addEventListener('click', () => { endingFocusIndex = i; });
+  });
+
   // Gameplay (start/advance/back) is driven by the physical console buttons
   // only — no click-to-advance on the screen itself. Keyboard stays as an
   // accessible fallback for the same three actions.
@@ -592,12 +613,15 @@ function initGame(root){
       if (phase === 'start') beginGame();
       else if (phase === 'intro' || phase === 'dialogue') advance();
       else if (phase === 'menu') confirmMenuFocus();
+      else if (phase === 'ending') confirmEndingFocus();
     }
     if (e.key === 'x' || e.key === 'X' || e.key === 'Escape') {
       goBack();
     }
     if (e.key === 'ArrowUp' && phase === 'menu') moveMenuFocus(-1);
     if (e.key === 'ArrowDown' && phase === 'menu') moveMenuFocus(1);
+    if (e.key === 'ArrowUp' && phase === 'ending') moveEndingFocus(-1);
+    if (e.key === 'ArrowDown' && phase === 'ending') moveEndingFocus(1);
   });
 }
 
@@ -632,20 +656,40 @@ function beginGame(){
   startDialogue('intro');
 }
 
-// Three animated poses exist (default, jumping, cats) — "excited" plays
-// the jump celebration, "cats" plays her holding the cats for the secret
-// reveal, and everything else (happy/shy) falls back to the default
-// speaking loop, which is also where every animation returns to.
+// Four animated poses exist (default, happy, jumping, cats) — "excited"
+// plays the happy celebration, "cats" plays her holding the cats (and
+// settles holding them, not empty-handed), and everything else (shy) falls
+// back to the default speaking loop, which is also where most animations
+// return to after playing once.
 const CHAR_ANIM_SRC = {
   default: './dolldefault.png',
+  happy: './dollhappy.png',
   jumping: './dolljumping.png',
   cats: './dollcats.png',
 };
+// Poses that should hold their last frame instead of reverting to frame 0 —
+// she stays visibly holding the cats rather than snapping back empty-handed.
+const HOLD_LAST_FRAME = new Set(['cats']);
+// Matches .gbscr-char-anim's gbCharStrip keyframes (9 frames, 252px each,
+// 1.17s). animation-fill-mode:forwards isn't used here on purpose: with
+// steps(9) the animation's own end value lands one step past the last real
+// frame (a blank sliver off the edge of the strip), so the hold is done by
+// hand — let it finish, then freeze on the actual last frame's offset.
+const CHAR_FRAME_W = 252, CHAR_FRAMES = 9, CHAR_ANIM_MS = 1170;
 let currentCharAnim = 'default';
+let holdFrameTimer = null;
 function replayCharAnim(){
+  clearTimeout(holdFrameTimer);
+  charAnim.style.backgroundPositionX = '';
   charAnim.style.animation = 'none';
   void charAnim.offsetWidth;
   charAnim.style.animation = '';
+  if (HOLD_LAST_FRAME.has(currentCharAnim)) {
+    holdFrameTimer = setTimeout(() => {
+      charAnim.style.animation = 'none';
+      charAnim.style.backgroundPositionX = -(CHAR_FRAME_W * (CHAR_FRAMES - 1)) + 'px';
+    }, CHAR_ANIM_MS);
+  }
 }
 // Called once per dialogue line, not just on pose change, so she plays
 // the little "expression" motion fresh for every line (the CSS animation
@@ -666,7 +710,7 @@ function setCharAnim(name){
   }, 160);
 }
 function setExpr(expr){
-  setCharAnim(expr === 'excited' ? 'jumping' : expr === 'cats' ? 'cats' : 'default');
+  setCharAnim(expr === 'excited' ? 'happy' : expr === 'cats' ? 'cats' : 'default');
 }
 
 function typeText(text, onDone){
@@ -753,20 +797,19 @@ function openMenu(){
 
   screenEl.querySelectorAll('.gbscr-topic[data-topic]').forEach(btn => {
     const t = btn.getAttribute('data-topic');
-    if (t !== 'secret' && visitedTopics.has(t)) btn.classList.add('done');
+    if (!LOCKED_TOPICS.includes(t) && visitedTopics.has(t)) btn.classList.add('done');
   });
 
   const avail = getAvailableTopicIndices();
   setMenuFocus(avail.length ? avail[0] : 0);
 
-  const allMain = ['design','moda','musica','rotina'].every(t => visitedTopics.has(t));
-  if (allMain && visitedTopics.has('secret')) {
+  if (TOPIC_KEYS.every(t => visitedTopics.has(t))) {
     setTimeout(showEnding, 400);
   }
 }
 
 /* ---- D-pad menu navigation (up/down moves focus, A/Start confirms) ---- */
-const TOPIC_KEYS = ['design','moda','musica','rotina','secret'];
+const TOPIC_KEYS = [...BASE_TOPICS, ...LOCKED_TOPICS];
 let menuFocusIndex = 0;
 
 function getAvailableTopicIndices(){
@@ -800,10 +843,16 @@ function confirmMenuFocus(){
 }
 
 function checkUnlocks(){
-  if (friendship >= UNLOCK_SECRET_AT && secretBtn.disabled) {
-    secretBtn.disabled = false;
-    showHudNotif('nova pergunta desbloqueada');
-  }
+  if (!BASE_TOPICS.every(t => visitedTopics.has(t))) return;
+  const locked = LOCKED_TOPICS
+    .map(t => screenEl.querySelector(`.gbscr-topic[data-topic="${t}"]`))
+    .filter(btn => btn && btn.disabled);
+  if (!locked.length) return;
+  locked.forEach(btn => {
+    btn.disabled = false;
+    btn.textContent = btn.getAttribute('data-label');
+  });
+  showHudNotif('novas perguntas desbloqueadas');
 }
 
 /* Friendship-bar feedback ("+N pts", "nova pergunta desbloqueada") is
@@ -827,8 +876,27 @@ function processHudNotifQueue(){
 }
 
 function showEnding(){
+  phase = 'ending';
   endingScreen.classList.add('open');
+  setEndingFocus(0);
   for (let i = 0; i < 4; i++) setTimeout(spawnParticles, i * 350);
+}
+
+/* ---- D-pad navigation for the ending screen's linkedin/email links ---- */
+let endingFocusIndex = 0;
+function setEndingFocus(idx){
+  endingFocusIndex = idx;
+  endLinkEls.forEach(el => el.classList.remove('focused'));
+  if (endLinkEls[idx]) endLinkEls[idx].classList.add('focused');
+}
+function moveEndingFocus(dir){
+  if (!endLinkEls.length) return;
+  const next = (endingFocusIndex + dir + endLinkEls.length) % endLinkEls.length;
+  setEndingFocus(next);
+}
+function confirmEndingFocus(){
+  const el = endLinkEls[endingFocusIndex];
+  if (el) el.click();
 }
 
 function bounceChar(){
@@ -916,6 +984,8 @@ loader.load('./gameboy.glb', (gltf) => {
     if (CONTROL_NAMES.has(obj.name) && !controlNodes[obj.name]) {
       controlNodes[obj.name] = obj;
       obj.userData.restZ = obj.position.z;
+      obj.userData.restRotX = obj.rotation.x;
+      obj.userData.restRotY = obj.rotation.y;
     }
   });
 
@@ -1035,7 +1105,13 @@ loader.load('./gameboy.glb', (gltf) => {
     const cssObject = new CSS3DObject(cssEl.querySelector('#gbscr'));
     cssObject.position.copy(screenCenter);
     cssObject.quaternion.copy(screenQuat);
-    cssObject.scale.set(screenWidth / domW, screenHeight / domH, (screenWidth / domW + screenHeight / domH) / 2);
+    // Slight overscan (grows symmetrically from center, so it stays
+    // centered) so the flat CSS rectangle always fully covers the
+    // stencil-punched hole, including at its rounded corners — without
+    // this a hairline gap can reveal the page background behind it,
+    // especially as the model tilts with the mouse.
+    const OVERSCAN = 1.035;
+    cssObject.scale.set(screenWidth / domW * OVERSCAN, screenHeight / domH * OVERSCAN, (screenWidth / domW + screenHeight / domH) / 2);
     cssGroup.add(cssObject);
     screenObj = cssObject;
   }
@@ -1144,8 +1220,11 @@ function getDpadDirection(point){
 
 // The model has a single combined mesh ("select_low") spanning both the
 // SELECT and START oblong buttons — split it by local x to tell which
-// physical button was actually pressed (right half is START).
-const SELECT_START_MID_X = -5.05;
+// physical button was actually pressed (right half is START). Measured by
+// raycasting across the mesh: local x runs roughly -12.5 (left edge of
+// Select) to +12.1 (right edge of Start), so the true midpoint is ~0, not
+// the old -5.05 which misread most of Select's own half as Start too.
+const SELECT_START_MID_X = -0.2;
 function getSelectStartSide(point){
   const node = controlNodes['select_low'];
   if (!node || !point) return null;
@@ -1158,7 +1237,12 @@ let powerOn = true;
 /* ---- tactile feedback: click sound + button sinks in, then springs back ---- */
 const PRESS_DEPTH = { a_low: 1.4, b_low: 1.4, select_low: 1.0, movement_low: 0.9, movementknobs_low: 0.9 };
 const HOLD_MS = 90, SPRING_MS = 140;
-const pressedAt = new Map();
+// D-pad is a single rigid rocker, like the real hardware — pressing one arm
+// tilts the whole cross so the opposite arm lifts slightly, instead of the
+// whole pad sinking in flat like the other (independent) buttons.
+const DPAD_TILT = 0.24;
+const DPAD_TILT_AXIS = { up: ['x', -1], down: ['x', 1], left: ['y', -1], right: ['y', 1] };
+const pressedAt = new Map(); // name -> { t0, dir }
 
 let audioCtx = null;
 function playClick(){
@@ -1250,22 +1334,40 @@ function playBootChime(){
     });
   } catch (e) { /* audio not available — silently skip */ }
 }
-// Browsers block audio until a user gesture — the loading screen's own
-// sound may start muted, but this resumes it the moment any input lands
-// (a physical button press, a key), so the rest of the game's sounds
-// are never silently skipped after that.
-['pointerdown', 'keydown'].forEach(evt => {
+// Browsers block audio until a user gesture, so the loading music can't
+// truly autoplay before any interaction — this is a hard platform policy,
+// not something the page can override. Best effort: prime the context as
+// early as possible and resume it on the very first sign of ANY input
+// (not just a click on the console itself), so the music unmutes the
+// instant the browser allows it rather than waiting for a button press.
+['pointerdown', 'pointerup', 'keydown', 'touchstart', 'wheel', 'scroll'].forEach(evt => {
   window.addEventListener(evt, () => {
     if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-  }, { once: true });
+  }, { once: true, passive: true });
 });
 
-function pressControl(name){
-  const node = controlNodes[name];
-  const depth = PRESS_DEPTH[name];
-  if (node && depth) {
-    node.position.z = node.userData.restZ - depth;
-    pressedAt.set(name, performance.now());
+function pressControl(name, dpadDir){
+  const isDpad = name === 'movement_low' || name === 'movementknobs_low';
+  if (isDpad && dpadDir && DPAD_TILT_AXIS[dpadDir]) {
+    // Rock both D-pad meshes together (they're overlapping pieces of the
+    // same rigid cross) — whichever arm was hit sinks, the opposite arm
+    // rises, rather than the whole pad sinking in evenly.
+    const [axis, sign] = DPAD_TILT_AXIS[dpadDir];
+    ['movement_low', 'movementknobs_low'].forEach((n) => {
+      const node = controlNodes[n];
+      const depth = PRESS_DEPTH[n];
+      if (!node || !depth) return;
+      node.position.z = node.userData.restZ - depth * 0.5;
+      node.rotation[axis] = node.userData['restRot' + axis.toUpperCase()] + sign * DPAD_TILT;
+      pressedAt.set(n, { t0: performance.now(), dir: dpadDir });
+    });
+  } else {
+    const node = controlNodes[name];
+    const depth = PRESS_DEPTH[name];
+    if (node && depth) {
+      node.position.z = node.userData.restZ - depth;
+      pressedAt.set(name, { t0: performance.now(), dir: null });
+    }
   }
   playClick();
 }
@@ -1273,7 +1375,8 @@ function pressControl(name){
 function handleControl(hit){
   const name = hit && hit.name;
   if (!name) return;
-  pressControl(name);
+  const dpadDir = (name === 'movement_low' || name === 'movementknobs_low') ? getDpadDirection(hit.point) : null;
+  pressControl(name, dpadDir);
   switch (name) {
     // NOTE: the glTF's own mesh names are swapped from the silkscreened
     // labels — the mesh named "a_low" sits where the shell is printed "B",
@@ -1282,6 +1385,7 @@ function handleControl(hit){
     case 'b_low':
       if (phase === 'intro' || phase === 'dialogue') advance();
       else if (phase === 'menu') confirmMenuFocus();
+      else if (phase === 'ending') confirmEndingFocus();
       break;
     case 'select_low':
       // Select (left half) does nothing in this game — only Start (right
@@ -1297,6 +1401,10 @@ function handleControl(hit){
         const dir = getDpadDirection(hit.point);
         if (dir === 'up') moveMenuFocus(-1);
         else if (dir === 'down') moveMenuFocus(1);
+      } else if (phase === 'ending') {
+        const dir = getDpadDirection(hit.point);
+        if (dir === 'up') moveEndingFocus(-1);
+        else if (dir === 'down') moveEndingFocus(1);
       } else if (phase === 'intro' || phase === 'dialogue') {
         advance();
       }
@@ -1326,8 +1434,9 @@ wrap.addEventListener('pointerdown', (e) => {
 
 wrap.addEventListener('pointermove', (e) => {
   const hit = raycastAt(e.clientX, e.clientY);
-  wrap.style.cursor = hit ? 'pointer' : '';
+  wrap.style.cursor = (hit && hit.name) ? 'pointer' : '';
 });
+wrap.addEventListener('pointerleave', () => { wrap.style.cursor = ''; });
 
 /* ---- render loop ---- */
 function animate(t){
@@ -1348,17 +1457,24 @@ function animate(t){
 
   if (pressedAt.size) {
     const now = performance.now();
-    pressedAt.forEach((t0, name) => {
+    pressedAt.forEach(({ t0, dir }, name) => {
       const node = controlNodes[name];
       const depth = PRESS_DEPTH[name];
       if (!node) { pressedAt.delete(name); return; }
       const elapsed = now - t0;
       if (elapsed <= HOLD_MS) return;
+      const isDpad = (name === 'movement_low' || name === 'movementknobs_low') && dir && DPAD_TILT_AXIS[dir];
       const restZ = node.userData.restZ;
-      const pressedZ = restZ - depth;
+      const pressedZ = restZ - depth * (isDpad ? 0.5 : 1);
       const springT = Math.min(1, (elapsed - HOLD_MS) / SPRING_MS);
       const eased = 1 - Math.pow(1 - springT, 3);
       node.position.z = pressedZ + (restZ - pressedZ) * eased;
+      if (isDpad) {
+        const [axis, sign] = DPAD_TILT_AXIS[dir];
+        const restRot = node.userData['restRot' + axis.toUpperCase()];
+        const pressedRot = restRot + sign * DPAD_TILT;
+        node.rotation[axis] = pressedRot + (restRot - pressedRot) * eased;
+      }
       if (springT >= 1) pressedAt.delete(name);
     });
   }
