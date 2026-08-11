@@ -218,7 +218,7 @@
   .gbscr-scene{
     position:absolute;inset:0;
     background-color:var(--g3);
-    background-image:url('./scene-bg.png');
+    background-image:url('./scenebg.png');
     background-repeat:no-repeat;
     background-position:0 0;
     /* Pixel size, not a percentage — percentage background-size silently
@@ -281,7 +281,7 @@
        size, so she reads as standing right up against the desk/camera
        instead of a small full-body figure lost in the scene. */
     width:252px;height:174px;
-    background-image:url('./doll-default.png');
+    background-image:url('./dolldefault.png');
     background-repeat:no-repeat;
     background-size:2268px 174px;
     image-rendering:pixelated;
@@ -391,7 +391,7 @@
   .gbscr-ending.open{display:flex;}
   .gbscr-end-face{
     width:96px;height:90px;
-    background-image:url('./doll-jumping.png');
+    background-image:url('./dolljumping.png');
     background-repeat:no-repeat;
     background-size:864px 90px;
     image-rendering:pixelated;
@@ -652,9 +652,9 @@ function beginGame(){
 // reveal, and everything else (happy/shy) falls back to the default
 // speaking loop, which is also where every animation returns to.
 const CHAR_ANIM_SRC = {
-  default: './doll-default.png',
-  jumping: './doll-jumping.png',
-  cats: './doll-cats.png',
+  default: './dolldefault.png',
+  jumping: './dolljumping.png',
+  cats: './dollcats.png',
 };
 let currentCharAnim = 'default';
 function setCharAnim(name){
