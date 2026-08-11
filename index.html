@@ -76,6 +76,31 @@
     white-space:nowrap;
   }
 
+  /* Page-level control, not part of the "physical buttons only" game —
+     visible from the moment the tab opens (even during loading), since
+     the background music starts immediately too. */
+  .mute-btn{
+    position:fixed;
+    top:clamp(14px,3vh,28px);
+    right:clamp(16px,4vw,40px);
+    z-index:50;
+    width:38px;height:38px;
+    border-radius:50%;
+    border:none;
+    background:var(--accent);
+    color:#fff;
+    font-size:16px;
+    line-height:1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    box-shadow:0 2px 10px rgba(0,0,0,.18);
+    transition:transform .12s ease;
+  }
+  .mute-btn:hover{transform:scale(1.06);}
+  .mute-btn:active{transform:scale(0.94);}
+
   /* ============ HERO / STAGE ============ */
   .stage{
     min-height:100dvh;
@@ -190,6 +215,12 @@
 
   .gbscr-lcd{
     position:absolute;inset:0;overflow:hidden;
+    /* Rounded to match the bezel's own window — the CSS3D screen behind
+       it is deliberately a hair oversized (see OVERSCAN in the JS) so it
+       always fully covers the stencil-punched hole, but that oversized
+       rect is sharp-cornered; rounding + clipping the actual visible fill
+       here keeps it from ever poking past the bezel's rounded corner. */
+    border-radius:16px;
     background:var(--g3);
     box-shadow:
       inset 0 4px 10px rgba(0,0,0,.45),
@@ -424,6 +455,8 @@
   </div>
 </footer>
 
+<button class="mute-btn" id="muteBtn" type="button" aria-pressed="false" aria-label="silenciar">🔊</button>
+
 <main class="stage">
   <div class="gb-wrap" id="gbWrap">
     <div class="gb-css3d" id="gbCss3d"></div>
@@ -588,21 +621,12 @@ function initGame(root){
   hudNotif     = root.querySelector('#hudNotif');
   endLinkEls   = Array.from(root.querySelectorAll('[data-end-link]'));
 
-  root.querySelectorAll('.gbscr-topic').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (btn.disabled) return;
-      const topic = btn.getAttribute('data-topic');
-      menuScreen.classList.remove('open');
-      startDialogue(topic);
-    });
-  });
-
-  // The ending's LinkedIn/email links are real <a> tags (so they still work
-  // with a plain mouse click), but also need to be reachable with the
-  // physical D-pad + A button like everything else in the game.
-  endLinkEls.forEach((el, i) => {
-    el.addEventListener('click', () => { endingFocusIndex = i; });
+  // Every on-screen control is physical-buttons-only, same as the rest of
+  // the game — no mouse-click shortcut on the menu topics or the ending's
+  // LinkedIn/email links. D-pad moves focus, A (mesh "b_low") confirms;
+  // confirmMenuFocus()/confirmEndingFocus() do the actual selecting.
+  endLinkEls.forEach((el) => {
+    el.addEventListener('click', (e) => { e.preventDefault(); });
   });
 
   // Gameplay (start/advance/back) is driven by the physical console buttons
@@ -636,11 +660,9 @@ function startBootSequence(){
   scr.classList.add('gb-boot');
   setTimeout(() => scr.classList.remove('gb-boot'), 750);
 
-  playLoadingLoop();
   requestAnimationFrame(() => { bootBarFill.style.width = '100%'; });
 
   setTimeout(() => {
-    stopLoadingLoop();
     playBootChime();
     loadingScreen.style.display = 'none';
     startScreen.style.display = 'flex';
@@ -698,7 +720,9 @@ function replayCharAnim(){
 function setCharAnim(name){
   if (!CHAR_ANIM_SRC[name]) return;
   if (name === currentCharAnim) {
-    replayCharAnim();
+    // Hold poses (cats) stay exactly as settled across lines of the same
+    // topic — she doesn't let go and re-grab the cats every line.
+    if (!HOLD_LAST_FRAME.has(name)) replayCharAnim();
     return;
   }
   currentCharAnim = name;
@@ -782,7 +806,7 @@ function startDialogue(key){
       bounceChar();
       spawnParticles();
       showHudNotif('+' + FRIENDSHIP_PER_TOPIC + ' pts');
-      checkUnlocks();
+      checkUnlocks(key);
     }, 600);
   }
   showLine(0);
@@ -797,7 +821,7 @@ function openMenu(){
 
   screenEl.querySelectorAll('.gbscr-topic[data-topic]').forEach(btn => {
     const t = btn.getAttribute('data-topic');
-    if (!LOCKED_TOPICS.includes(t) && visitedTopics.has(t)) btn.classList.add('done');
+    if (visitedTopics.has(t)) btn.classList.add('done');
   });
 
   const avail = getAvailableTopicIndices();
@@ -839,20 +863,22 @@ function moveMenuFocus(dir){
 
 function confirmMenuFocus(){
   const btn = screenEl.querySelector(`.gbscr-topic[data-topic="${TOPIC_KEYS[menuFocusIndex]}"]`);
-  if (btn && !btn.disabled) btn.click();
+  if (!btn || btn.disabled) return;
+  menuScreen.classList.remove('open');
+  startDialogue(btn.getAttribute('data-topic'));
 }
 
-function checkUnlocks(){
-  if (!BASE_TOPICS.every(t => visitedTopics.has(t))) return;
-  const locked = LOCKED_TOPICS
-    .map(t => screenEl.querySelector(`.gbscr-topic[data-topic="${t}"]`))
-    .filter(btn => btn && btn.disabled);
-  if (!locked.length) return;
-  locked.forEach(btn => {
-    btn.disabled = false;
-    btn.textContent = btn.getAttribute('data-label');
-  });
-  showHudNotif('novas perguntas desbloqueadas');
+// Each base topic unlocks exactly one locked topic on its own, the moment
+// it's visited — not all three at once after finishing all base topics.
+const UNLOCK_MAP = { design: 'gatos', rotina: 'comida', hobbies: 'segredo' };
+function checkUnlocks(visitedKey){
+  const target = UNLOCK_MAP[visitedKey];
+  if (!target) return;
+  const btn = screenEl.querySelector(`.gbscr-topic[data-topic="${target}"]`);
+  if (!btn || !btn.disabled) return;
+  btn.disabled = false;
+  btn.textContent = btn.getAttribute('data-label');
+  showHudNotif('nova pergunta desbloqueada');
 }
 
 /* Friendship-bar feedback ("+N pts", "nova pergunta desbloqueada") is
@@ -896,7 +922,9 @@ function moveEndingFocus(dir){
 }
 function confirmEndingFocus(){
   const el = endLinkEls[endingFocusIndex];
-  if (el) el.click();
+  if (!el) return;
+  if (el.target === '_blank') window.open(el.href, '_blank', 'noopener');
+  else window.location.href = el.href;
 }
 
 function bounceChar(){
@@ -931,6 +959,7 @@ const wrap   = document.getElementById('gbWrap');
 const canvas = document.getElementById('gbCanvas');
 const cssEl  = document.getElementById('gbCss3d');
 const loadingEl = document.getElementById('gbLoading');
+const muteBtn = document.getElementById('muteBtn');
 
 cssEl.innerHTML = SCREEN_HTML;
 initGame(cssEl);
@@ -1244,20 +1273,32 @@ const DPAD_TILT = 0.24;
 const DPAD_TILT_AXIS = { up: ['x', -1], down: ['x', 1], left: ['y', -1], right: ['y', 1] };
 const pressedAt = new Map(); // name -> { t0, dir }
 
-let audioCtx = null;
+// Everything routes through one master gain node so the single mute button
+// silences all of it (background music, clicks, chimes) at once.
+let audioCtx = null, masterGain = null, isMuted = false;
+function ensureAudio(){
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    masterGain = audioCtx.createGain();
+    masterGain.gain.value = isMuted ? 0 : 1;
+    masterGain.connect(audioCtx.destination);
+  }
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+
 function playClick(){
   try {
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    if (audioCtx.state === 'suspended') audioCtx.resume();
-    const t0 = audioCtx.currentTime;
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
+    const ctx = ensureAudio();
+    const t0 = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
     osc.type = 'square';
     osc.frequency.setValueAtTime(1200, t0);
     osc.frequency.exponentialRampToValueAtTime(380, t0 + 0.04);
     gain.gain.setValueAtTime(0.16, t0);
     gain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.045);
-    osc.connect(gain).connect(audioCtx.destination);
+    osc.connect(gain).connect(masterGain);
     osc.start(t0);
     osc.stop(t0 + 0.05);
   } catch (e) { /* audio not available — silently skip */ }
@@ -1265,81 +1306,103 @@ function playClick(){
 
 function playIntroJingle(){
   try {
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const ctx = ensureAudio();
     const notes = [523.25, 659.25, 783.99, 1046.5]; // C5 E5 G5 C6 — a little "power on" arpeggio
-    const t0 = audioCtx.currentTime;
+    const t0 = ctx.currentTime;
     notes.forEach((freq, i) => {
       const start = t0 + i * 0.11;
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
       osc.type = 'square';
       osc.frequency.setValueAtTime(freq, start);
       gain.gain.setValueAtTime(0.0001, start);
       gain.gain.exponentialRampToValueAtTime(0.14, start + 0.015);
       gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.2);
-      osc.connect(gain).connect(audioCtx.destination);
+      osc.connect(gain).connect(masterGain);
       osc.start(start);
       osc.stop(start + 0.22);
     });
   } catch (e) { /* audio not available — silently skip */ }
 }
 
-let loadingLoopTimer = null;
-function playLoadingLoop(){
-  try {
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    if (audioCtx.state === 'suspended') audioCtx.resume();
-    const notes = [392, 523.25]; // G4, C5 — soft two-note loading pulse
-    let i = 0;
-    const tick = () => {
-      const t0 = audioCtx.currentTime;
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.type = 'square';
-      osc.frequency.setValueAtTime(notes[i % notes.length], t0);
-      gain.gain.setValueAtTime(0.0001, t0);
-      gain.gain.exponentialRampToValueAtTime(0.08, t0 + 0.01);
-      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.09);
-      osc.connect(gain).connect(audioCtx.destination);
-      osc.start(t0);
-      osc.stop(t0 + 0.1);
-      i++;
-    };
-    tick();
-    loadingLoopTimer = setInterval(tick, 260);
-  } catch (e) { /* audio not available — silently skip */ }
-}
-function stopLoadingLoop(){
-  if (loadingLoopTimer) { clearInterval(loadingLoopTimer); loadingLoopTimer = null; }
-}
 function playBootChime(){
   try {
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const ctx = ensureAudio();
     const notes = [659.25, 987.77]; // E5, B5 — short "ready" chime
-    const t0 = audioCtx.currentTime;
+    const t0 = ctx.currentTime;
     notes.forEach((freq, i) => {
       const start = t0 + i * 0.09;
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
       osc.type = 'square';
       osc.frequency.setValueAtTime(freq, start);
       gain.gain.setValueAtTime(0.0001, start);
       gain.gain.exponentialRampToValueAtTime(0.16, start + 0.015);
       gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.18);
-      osc.connect(gain).connect(audioCtx.destination);
+      osc.connect(gain).connect(masterGain);
       osc.start(start);
       osc.stop(start + 0.2);
     });
   } catch (e) { /* audio not available — silently skip */ }
 }
-// Browsers block audio until a user gesture, so the loading music can't
-// truly autoplay before any interaction — this is a hard platform policy,
-// not something the page can override. Best effort: prime the context as
-// early as possible and resume it on the very first sign of ANY input
-// (not just a click on the console itself), so the music unmutes the
-// instant the browser allows it rather than waiting for a button press.
+
+// One gentle looping melody that plays for the whole visit — starts at
+// page load (not gated behind a click on the console) and keeps going
+// through loading, dialogue, menu and the ending alike, instead of being
+// swapped out at each phase transition. The boot/intro/click sounds above
+// still layer short accents on top of it.
+const BG_NOTE_S = 0.32;
+const BG_MELODY = [
+  523.25, null, 587.33, 659.25, null, 783.99, 659.25, null,
+  523.25, null, 440.00, 523.25, null, 587.33, 493.88, null,
+  440.00, null, 523.25, 587.33, null, 659.25, 587.33, null,
+  523.25, null, 493.88, 440.00, null, 392.00, 440.00, null,
+];
+let bgMusicTimer = null, bgIdx = 0;
+function bgMusicTick(){
+  try {
+    const ctx = ensureAudio();
+    const freq = BG_MELODY[bgIdx % BG_MELODY.length];
+    bgIdx++;
+    if (!freq) return;
+    const t0 = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'triangle'; // softer than the square-wave sfx, sits underneath them
+    osc.frequency.setValueAtTime(freq, t0);
+    gain.gain.setValueAtTime(0.0001, t0);
+    gain.gain.exponentialRampToValueAtTime(0.045, t0 + 0.03);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + BG_NOTE_S * 0.92);
+    osc.connect(gain).connect(masterGain);
+    osc.start(t0);
+    osc.stop(t0 + BG_NOTE_S);
+  } catch (e) { /* audio not available — silently skip */ }
+}
+function startBgMusic(){
+  if (bgMusicTimer) return;
+  ensureAudio();
+  bgMusicTick();
+  bgMusicTimer = setInterval(bgMusicTick, BG_NOTE_S * 1000);
+}
+
+function setMuted(muted){
+  isMuted = muted;
+  if (masterGain) masterGain.gain.setTargetAtTime(muted ? 0 : 1, audioCtx.currentTime, 0.01);
+  if (muteBtn) {
+    muteBtn.textContent = muted ? '🔇' : '🔊';
+    muteBtn.setAttribute('aria-pressed', String(muted));
+    muteBtn.setAttribute('aria-label', muted ? 'ativar som' : 'silenciar');
+  }
+}
+if (muteBtn) muteBtn.addEventListener('click', () => setMuted(!isMuted));
+
+// Browsers block audio until a user gesture — true autoplay before any
+// interaction isn't possible, that's a platform policy no page can
+// override. Best effort: start the music engine immediately on load (so
+// it's already running the instant the browser allows sound) and resume
+// the context on the very first sign of ANY input, not just a click on
+// the console itself.
+startBgMusic();
 ['pointerdown', 'pointerup', 'keydown', 'touchstart', 'wheel', 'scroll'].forEach(evt => {
   window.addEventListener(evt, () => {
     if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
@@ -1405,9 +1468,9 @@ function handleControl(hit){
         const dir = getDpadDirection(hit.point);
         if (dir === 'up') moveEndingFocus(-1);
         else if (dir === 'down') moveEndingFocus(1);
-      } else if (phase === 'intro' || phase === 'dialogue') {
-        advance();
       }
+      // Advancing dialogue is A-only (case 'b_low' above) — the D-pad no
+      // longer doubles as an advance button during dialogue.
       break;
     case 'switch_low':
       togglePower();
