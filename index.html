@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Anaju Pereira</title>
-<meta name="description" content="Um Game Boy interativo para conhecer a Anaju — jogue para descobrir mais.">
+<meta name="description" content="An interactive Game Boy to get to know Anaju — play to find out more.">
 <link rel="icon" href="./favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -94,6 +94,31 @@
   .mute-btn svg{width:18px;height:18px;display:block;}
   .mute-btn:hover{transform:scale(1.06);}
   .mute-btn:active{transform:scale(0.94);}
+
+  /* Sits directly to the left of the mute button, same size/style. */
+  .lang-btn{
+    position:fixed;
+    top:clamp(14px,3vh,28px);
+    right:calc(clamp(16px,4vw,40px) + 46px);
+    z-index:50;
+    width:38px;height:38px;
+    border-radius:50%;
+    border:none;
+    background:#fff;
+    color:#333;
+    font-family:var(--font-ui);
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:.02em;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    box-shadow:0 2px 10px rgba(0,0,0,.18);
+    transition:transform .12s ease;
+  }
+  .lang-btn:hover{transform:scale(1.06);}
+  .lang-btn:active{transform:scale(0.94);}
 
   /* ============ HERO / STAGE ============ */
   .stage{
@@ -448,13 +473,14 @@
   </div>
 </footer>
 
-<button class="mute-btn" id="muteBtn" type="button" aria-pressed="false" aria-label="silenciar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg></button>
+<button class="lang-btn" id="langBtn" type="button" aria-label="mudar para português">EN</button>
+<button class="mute-btn" id="muteBtn" type="button" aria-pressed="false" aria-label="mute"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg></button>
 
 <main class="stage">
   <div class="gb-wrap" id="gbWrap">
     <div class="gb-css3d" id="gbCss3d"></div>
     <canvas class="gb-canvas" id="gbCanvas"></canvas>
-    <div class="gb-loading" id="gbLoading">carregando…</div>
+    <div class="gb-loading" id="gbLoading">loading…</div>
   </div>
 </main>
 
@@ -489,7 +515,7 @@ const SCREEN_HTML = `
   <div class="gbscr-scene"></div>
 
   <div class="gbscr-hud">
-    <div class="gbscr-hud-label">nível de amizade</div>
+    <div class="gbscr-hud-label">friendship level</div>
     <div class="gbscr-bar-row">
       <div class="gbscr-heart-wrap">
         <svg viewBox="0 0 24 21" xmlns="http://www.w3.org/2000/svg">
@@ -509,35 +535,35 @@ const SCREEN_HTML = `
     <div class="gbscr-dlg-name" id="dlgName">ANAJU</div>
     <div class="gbscr-dlg-panel">
       <div class="gbscr-dlg-text" id="dlgText"></div>
-      <div class="gbscr-hint" id="dlgHint">▼ A para continuar</div>
+      <div class="gbscr-hint" id="dlgHint">▼ A to continue</div>
     </div>
   </div>
 
   <div class="gbscr-menu" id="menuScreen">
-    <div class="gbscr-menu-heading">o que você quer saber?</div>
-    <button class="gbscr-topic" data-topic="design">design &amp; trabalho</button>
-    <button class="gbscr-topic" data-topic="rotina">rotina &amp; vida</button>
+    <div class="gbscr-menu-heading">what do you want to know?</div>
+    <button class="gbscr-topic" data-topic="design">design &amp; career</button>
+    <button class="gbscr-topic" data-topic="rotina">routine &amp; life</button>
     <button class="gbscr-topic" data-topic="hobbies">hobbies</button>
-    <button class="gbscr-topic" data-topic="gatos" data-label="gatos" disabled>???</button>
-    <button class="gbscr-topic" data-topic="comida" data-label="comida" disabled>???</button>
-    <button class="gbscr-topic" data-topic="segredo" data-label="segredo" disabled>???</button>
+    <button class="gbscr-topic" data-topic="gatos" disabled>???</button>
+    <button class="gbscr-topic" data-topic="comida" disabled>???</button>
+    <button class="gbscr-topic" data-topic="segredo" disabled>???</button>
   </div>
 
   <div class="gbscr-loading" id="loadingScreen">
     <div class="gbscr-boot-title">ANAJU.EXE</div>
-    <div class="gbscr-boot-sub">vamos nos conhecer</div>
+    <div class="gbscr-boot-sub">let's get to know each other</div>
     <div class="gbscr-boot-bar-bg"><div class="gbscr-boot-bar-fill" id="bootBarFill"></div></div>
   </div>
 
   <div class="gbscr-start" id="startScreen">
     <div class="gbscr-title">ANA.EXE</div>
-    <div class="gbscr-press-hint">▼ pressione START</div>
+    <div class="gbscr-press-hint">▼ press START</div>
   </div>
 
   <div class="gbscr-ending" id="endingScreen">
     <div class="gbscr-end-face"></div>
-    <div class="gbscr-end-title">obaaa! agora somos amigos</div>
-    <div class="gbscr-end-msg">obrigada por me conhecer.<br>adorei nossa conversa ;)</div>
+    <div class="gbscr-end-title">yay! we're friends now</div>
+    <div class="gbscr-end-msg">thanks for getting to know me.<br>loved our chat ;)</div>
     <div class="gbscr-end-links" id="endLinks">
       <a href="https://www.linkedin.com/in/anaju-pereira/" target="_blank" class="gbscr-end-link" data-end-link>linkedin</a>
       <a href="mailto:anajps2002@gmail.com" class="gbscr-end-link" data-end-link>email</a>
@@ -546,41 +572,130 @@ const SCREEN_HTML = `
   </div>
 </div>`;
 
-const DIALOGUES = {
-  intro: [
-    { text: "Oi! Eu sou a Ana.", expr: 'happy' },
-    { text: "Parece que você caiu no meu mundo por acidente...", expr: 'shy' },
-    { text: "Que tal ficar um pouco? Prometo que é divertido", expr: 'excited' }
-  ],
-  design: [
-    { text: "Tenho mais de 4 anos de carreira como product designer.", expr: 'happy' },
-    { text: "Me considero criativa, detalhista e de bom humor.", expr: 'excited' }
-  ],
-  rotina: [
-    { text: "Sou do interior e isso explica muita coisa sobre mim.", expr: 'shy' },
-    { text: "Não existo de manhã. Só ligo de verdade depois de um café e de ver o sol.", expr: 'happy' }
-  ],
-  hobbies: [
-    { text: "Jardinagem, crochê e jogos. Parece que não combina, né?", expr: 'happy' },
-    { text: "Acho que só gosto de coisas que pedem paciência.", expr: 'shy' }
-  ],
-  gatos: [
-    { text: "Tenho quatro gatos: Francisco, Frederico, Alvinho e Sombra.", expr: 'cats' },
-    { text: "Cada um com personalidade muito própria.", expr: 'cats' }
-  ],
-  comida: [
-    { text: "Minha comida favorita do mundo, sem sombra de dúvida, é churrasco.", expr: 'happy' },
-    { text: "Não tem dia ruim que um bom churrasco não resolva.", expr: 'excited' },
-    { text: "Não recuso convite pra um churrasco", expr: 'happy' }
-  ],
-  segredo: [
-    { text: "Okay, confissão...", expr: 'shy' },
-    { text: "Sou viciada em Pinterest e consigo passar horas salvando referência sem perceber.", expr: 'excited' }
-  ]
+// Dialogue content is split into a language-agnostic expression sequence
+// (which pose/animation plays on each line) and per-language text, kept in
+// the same order/count per topic — see getDialogueLines().
+const DIALOGUE_EXPR = {
+  intro: ['happy', 'shy', 'excited'],
+  design: ['happy', 'excited'],
+  rotina: ['shy', 'happy'],
+  hobbies: ['happy', 'shy'],
+  gatos: ['cats', 'cats'],
+  comida: ['happy', 'excited', 'happy'],
+  segredo: ['shy', 'excited'],
+};
+const DIALOGUE_TEXT = {
+  en: {
+    intro: [
+      "Hi! I'm Ana.",
+      "Looks like you fell into my world by accident...",
+      "Why not stick around a bit? I promise it's fun"
+    ],
+    design: [
+      "I've got 4+ years of experience as a product designer.",
+      "I'd say I'm creative, detail-oriented, and good-humored."
+    ],
+    rotina: [
+      "I'm from a small town, and that explains a lot about me.",
+      "I don't function in the morning. I only really wake up after coffee and some sunlight."
+    ],
+    hobbies: [
+      "Gardening, crochet, and video games. Doesn't quite match, does it?",
+      "I guess I just like things that take patience."
+    ],
+    gatos: [
+      "I have four cats: Francisco, Frederico, Alvinho, and Sombra.",
+      "Each one with a very distinct personality."
+    ],
+    comida: [
+      "My favorite food in the entire world, hands down, is Brazilian barbecue.",
+      "There's no bad day a good barbecue can't fix.",
+      "I never turn down a barbecue invite"
+    ],
+    segredo: [
+      "Okay, confession...",
+      "I'm addicted to Pinterest — I can lose hours saving references without even noticing."
+    ],
+  },
+  pt: {
+    intro: [
+      "Oi! Eu sou a Ana.",
+      "Parece que você caiu no meu mundo por acidente...",
+      "Que tal ficar um pouco? Prometo que é divertido"
+    ],
+    design: [
+      "Tenho mais de 4 anos de carreira como product designer.",
+      "Me considero criativa, detalhista e de bom humor."
+    ],
+    rotina: [
+      "Sou do interior e isso explica muita coisa sobre mim.",
+      "Não existo de manhã. Só ligo de verdade depois de um café e de ver o sol."
+    ],
+    hobbies: [
+      "Jardinagem, crochê e jogos. Parece que não combina, né?",
+      "Acho que só gosto de coisas que pedem paciência."
+    ],
+    gatos: [
+      "Tenho quatro gatos: Francisco, Frederico, Alvinho e Sombra.",
+      "Cada um com personalidade muito própria."
+    ],
+    comida: [
+      "Minha comida favorita do mundo, sem sombra de dúvida, é churrasco.",
+      "Não tem dia ruim que um bom churrasco não resolva.",
+      "Não recuso convite pra um churrasco"
+    ],
+    segredo: [
+      "Okay, confissão...",
+      "Sou viciada em Pinterest e consigo passar horas salvando referência sem perceber."
+    ],
+  },
 };
 
-// Design & trabalho / Rotina & vida / Hobbies are always available; visiting
-// all three unlocks Gatos, Comida and Segredo together.
+// UI chrome inside the LCD screen (not the page chrome around it).
+const UI_TEXT = {
+  en: {
+    loading: 'loading…',
+    loadError: 'could not load the 3D model',
+    bootTitle: 'ANAJU.EXE',
+    bootSub: "let's get to know each other",
+    pressStart: '▼ press START',
+    hudLabel: 'friendship level',
+    menuHeading: 'what do you want to know?',
+    dlgHint: '▼ A to continue',
+    unlockNotif: 'new question unlocked',
+    endTitle: "yay! we're friends now",
+    endMsg: "thanks for getting to know me.<br>loved our chat ;)",
+    topics: {
+      design: 'design & career', rotina: 'routine & life', hobbies: 'hobbies',
+      gatos: 'cats', comida: 'food', segredo: 'secret',
+    },
+  },
+  pt: {
+    loading: 'carregando…',
+    loadError: 'não foi possível carregar o modelo 3D',
+    bootTitle: 'ANAJU.EXE',
+    bootSub: 'vamos nos conhecer',
+    pressStart: '▼ pressione START',
+    hudLabel: 'nível de amizade',
+    menuHeading: 'o que você quer saber?',
+    dlgHint: '▼ A para continuar',
+    unlockNotif: 'nova pergunta desbloqueada',
+    endTitle: 'obaaa! agora somos amigos',
+    endMsg: 'obrigada por me conhecer.<br>adorei nossa conversa ;)',
+    topics: {
+      design: 'design & trabalho', rotina: 'rotina & vida', hobbies: 'hobbies',
+      gatos: 'gatos', comida: 'comida', segredo: 'segredo',
+    },
+  },
+};
+
+let currentLang = localStorage.getItem('anaLang') === 'pt' ? 'pt' : 'en';
+function getDialogueLines(key){
+  return DIALOGUE_EXPR[key].map((expr, i) => ({ expr, text: DIALOGUE_TEXT[currentLang][key][i] }));
+}
+
+// Design & career / Routine & life / Hobbies are always available; visiting
+// all three unlocks Cats, Food and Secret together.
 const BASE_TOPICS = ['design', 'rotina', 'hobbies'];
 const LOCKED_TOPICS = ['gatos', 'comida', 'segredo'];
 const FRIENDSHIP_PER_TOPIC = 15;
@@ -588,6 +703,7 @@ const FRIENDSHIP_PER_TOPIC = 15;
 let friendship = 0;
 let visitedTopics = new Set();
 let currentLines = [];
+let currentTopicKey = null;
 let currentIdx = 0;
 let typing = false;
 let typeTimer = null;
@@ -785,7 +901,8 @@ function updateFriendshipBar(pct){
 function startDialogue(key){
   phase = 'dialogue';
   menuScreen.classList.remove('open');
-  currentLines = DIALOGUES[key];
+  currentTopicKey = key;
+  currentLines = getDialogueLines(key);
   currentIdx = 0;
 
   if (key !== 'intro' && !visitedTopics.has(key)) {
@@ -867,8 +984,56 @@ function checkUnlocks(visitedKey){
   const btn = screenEl.querySelector(`.gbscr-topic[data-topic="${target}"]`);
   if (!btn || !btn.disabled) return;
   btn.disabled = false;
-  btn.textContent = btn.getAttribute('data-label');
-  showHudNotif('nova pergunta desbloqueada');
+  btn.textContent = UI_TEXT[currentLang].topics[target];
+  showHudNotif(UI_TEXT[currentLang].unlockNotif);
+}
+
+/* ---- Language toggle (EN default / PT) — re-renders every piece of UI
+   text currently on screen, and re-renders the in-progress dialogue line
+   (instantly, no retyping) if a conversation is mid-line. ---- */
+function applyLanguage(lang){
+  currentLang = lang;
+  localStorage.setItem('anaLang', lang);
+  document.documentElement.lang = lang === 'pt' ? 'pt-BR' : 'en';
+  const t = UI_TEXT[lang];
+
+  if (loadingEl) loadingEl.textContent = t.loading;
+  if (langBtn) {
+    langBtn.textContent = lang === 'en' ? 'EN' : 'PT';
+    langBtn.setAttribute('aria-label', lang === 'en' ? 'mudar para português' : 'switch to English');
+  }
+  if (!screenEl) return;
+
+  const q = (sel) => screenEl.querySelector(sel);
+  const bootTitle = q('.gbscr-boot-title'), bootSub = q('.gbscr-boot-sub');
+  if (bootTitle) bootTitle.textContent = t.bootTitle;
+  if (bootSub) bootSub.textContent = t.bootSub;
+
+  const pressHint = q('.gbscr-press-hint');
+  if (pressHint) pressHint.textContent = t.pressStart;
+
+  const hudLabel = q('.gbscr-hud-label');
+  if (hudLabel) hudLabel.textContent = t.hudLabel;
+
+  if (dlgHint) dlgHint.textContent = t.dlgHint;
+
+  const menuHeading = q('.gbscr-menu-heading');
+  if (menuHeading) menuHeading.textContent = t.menuHeading;
+  screenEl.querySelectorAll('.gbscr-topic[data-topic]').forEach(btn => {
+    if (!btn.disabled) btn.textContent = t.topics[btn.getAttribute('data-topic')];
+  });
+
+  const endTitle = q('.gbscr-end-title'), endMsg = q('.gbscr-end-msg');
+  if (endTitle) endTitle.textContent = t.endTitle;
+  if (endMsg) endMsg.innerHTML = t.endMsg;
+
+  if (currentTopicKey && (phase === 'dialogue' || phase === 'intro')) {
+    currentLines = getDialogueLines(currentTopicKey);
+    clearInterval(typeTimer);
+    typing = false;
+    dlgText.textContent = currentLines[currentIdx].text;
+    dlgHint.style.display = 'block';
+  }
 }
 
 /* Friendship-bar feedback ("+N pts", "nova pergunta desbloqueada") is
@@ -950,9 +1115,12 @@ const canvas = document.getElementById('gbCanvas');
 const cssEl  = document.getElementById('gbCss3d');
 const loadingEl = document.getElementById('gbLoading');
 const muteBtn = document.getElementById('muteBtn');
+const langBtn = document.getElementById('langBtn');
 
 cssEl.innerHTML = SCREEN_HTML;
 initGame(cssEl);
+applyLanguage(currentLang);
+langBtn.addEventListener('click', () => applyLanguage(currentLang === 'en' ? 'pt' : 'en'));
 
 const HIDDEN_PREFIXES = ['cartridge_low', 'chip_low', 'lockOpen_low'];
 const CONTROL_NAMES = new Set(['a_low','b_low','select_low','switch_low','movement_low','movementknobs_low']);
@@ -1144,7 +1312,7 @@ loader.load('./gameboy.glb', (gltf) => {
   requestAnimationFrame(startBootSequence);
 }, undefined, (err) => {
   console.error('Failed to load Game Boy model', err);
-  loadingEl.textContent = 'não foi possível carregar o modelo 3D';
+  loadingEl.textContent = UI_TEXT[currentLang].loadError;
 });
 
 function fitCamera(){
@@ -1385,7 +1553,7 @@ function setMuted(muted){
   if (muteBtn) {
     muteBtn.innerHTML = muted ? MUTE_ICON_OFF : MUTE_ICON_ON;
     muteBtn.setAttribute('aria-pressed', String(muted));
-    muteBtn.setAttribute('aria-label', muted ? 'ativar som' : 'silenciar');
+    muteBtn.setAttribute('aria-label', muted ? 'unmute' : 'mute');
   }
 }
 if (muteBtn) muteBtn.addEventListener('click', () => setMuted(!isMuted));
