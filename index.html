@@ -69,6 +69,7 @@
   }
 
   .madeby-name{
+    margin-top:4px;
     font-size:12px;
     font-weight:600;
     letter-spacing:0.06em;
@@ -87,10 +88,8 @@
     width:38px;height:38px;
     border-radius:50%;
     border:none;
-    background:var(--accent);
-    color:#fff;
-    font-size:16px;
-    line-height:1;
+    background:#fff;
+    color:#333;
     display:flex;
     align-items:center;
     justify-content:center;
@@ -98,6 +97,7 @@
     box-shadow:0 2px 10px rgba(0,0,0,.18);
     transition:transform .12s ease;
   }
+  .mute-btn svg{width:18px;height:18px;display:block;}
   .mute-btn:hover{transform:scale(1.06);}
   .mute-btn:active{transform:scale(0.94);}
 
@@ -455,7 +455,7 @@
   </div>
 </footer>
 
-<button class="mute-btn" id="muteBtn" type="button" aria-pressed="false" aria-label="silenciar">🔊</button>
+<button class="mute-btn" id="muteBtn" type="button" aria-pressed="false" aria-label="silenciar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg></button>
 
 <main class="stage">
   <div class="gb-wrap" id="gbWrap">
@@ -561,9 +561,8 @@ const DIALOGUES = {
     { text: "Que tal ficar um pouco? Prometo que é divertido", expr: 'excited' }
   ],
   design: [
-    { text: "Quatro anos como product designer e ainda fico feliz quando um protótipo funciona de primeira.", expr: 'happy' },
-    { text: "Penso visualmente em tudo. Até reorganizo mentalmente o layout das coisas enquanto converso.", expr: 'excited' },
-    { text: "Mas o que eu mais gosto mesmo é resolver problema com bom humor no caminho.", expr: 'happy' }
+    { text: "Tenho mais de 4 anos de carreira como product designer.", expr: 'happy' },
+    { text: "Me considero criativa, detalhista e de bom humor.", expr: 'excited' }
   ],
   rotina: [
     { text: "Sou do interior e isso explica muita coisa sobre mim.", expr: 'shy' },
@@ -583,9 +582,8 @@ const DIALOGUES = {
     { text: "Não recuso convite pra um churrasco", expr: 'happy' }
   ],
   segredo: [
-    { text: "Tenho quatro gatos, plantas em todo canto e crochê no sofá.", expr: 'cats' },
-    { text: "Tecnicamente virei a tia da casa cheia de gato antes dos 30.", expr: 'shy' },
-    { text: "E honestamente? Eu amo.", expr: 'excited' }
+    { text: "Okay, confissão...", expr: 'shy' },
+    { text: "Sou viciada em Pinterest e consigo passar horas salvando referência sem perceber.", expr: 'excited' }
   ]
 };
 
@@ -1385,11 +1383,13 @@ function startBgMusic(){
   bgMusicTimer = setInterval(bgMusicTick, BG_NOTE_S * 1000);
 }
 
+const MUTE_ICON_ON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>';
+const MUTE_ICON_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="22" y1="9" x2="16" y2="15"></line><line x1="16" y1="9" x2="22" y2="15"></line></svg>';
 function setMuted(muted){
   isMuted = muted;
   if (masterGain) masterGain.gain.setTargetAtTime(muted ? 0 : 1, audioCtx.currentTime, 0.01);
   if (muteBtn) {
-    muteBtn.textContent = muted ? '🔇' : '🔊';
+    muteBtn.innerHTML = muted ? MUTE_ICON_OFF : MUTE_ICON_ON;
     muteBtn.setAttribute('aria-pressed', String(muted));
     muteBtn.setAttribute('aria-label', muted ? 'ativar som' : 'silenciar');
   }
