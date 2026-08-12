@@ -344,10 +344,9 @@
   .gbscr-topic{
     background:rgba(15,56,15,.14);border:none;border-radius:5px;
     padding:9px 12px;font-family:'Press Start 2P',monospace;font-size:7.5px;
-    color:var(--g0);cursor:pointer;text-align:left;line-height:1.6;position:relative;
+    color:var(--g0);cursor:default;outline:none;text-align:left;line-height:1.6;position:relative;
     text-transform:uppercase;transition:all .12s ease;
   }
-  .gbscr-topic:hover:not(:disabled),
   .gbscr-topic.focused:not(:disabled){
     background:var(--g0);color:var(--g4);
     padding-left:20px;padding-right:20px;
@@ -412,6 +411,7 @@
   .gbscr-end-link{
     font-family:'Press Start 2P',monospace;font-size:7.5px;color:var(--g0);
     text-decoration:none;background:rgba(15,56,15,.14);padding:9px 12px;border-radius:5px;
+    cursor:default;outline:none;
     position:relative;transition:all .12s ease;
   }
   /* Operable via the physical D-pad + A button, same focus language as the
