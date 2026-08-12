@@ -209,12 +209,11 @@
 
   .gbscr-lcd{
     position:absolute;inset:0;overflow:hidden;
-    /* Rounded to match the bezel's own window — the CSS3D screen behind
-       it is deliberately a hair oversized (see OVERSCAN in the JS) so it
-       always fully covers the stencil-punched hole, but that oversized
-       rect is sharp-cornered; rounding + clipping the actual visible fill
-       here keeps it from ever poking past the bezel's rounded corner. */
-    border-radius:16px;
+    /* Sharp corners on purpose — the stencil-punched hole underneath is a
+       plain rectangle, and the bezel's rounded look comes entirely from
+       the opaque 3D bezel mesh sitting in front of/around it, which
+       already masks these corners from view. A tiny overscan (see the JS)
+       covers the flat edges without pushing past that masked area. */
     background:var(--g3);
     box-shadow:
       inset 0 4px 10px rgba(0,0,0,.45),
@@ -243,7 +242,7 @@
   }
 
   .gbscr-hud{
-    position:absolute;top:8px;left:50%;transform:translateX(-50%);
+    position:absolute;top:16px;left:50%;transform:translateX(-50%);
     width:190px;z-index:6;text-align:center;
   }
   .gbscr-hud-label{
@@ -335,7 +334,7 @@
 
   .gbscr-menu{
     position:absolute;inset:0;background:var(--g3);z-index:30;
-    padding:12px 10px;display:none;flex-direction:column;gap:8px;
+    padding:18px 16px;display:none;flex-direction:column;gap:8px;
   }
   .gbscr-menu.open{display:flex;}
   .gbscr-menu-heading{
@@ -1128,10 +1127,12 @@ loader.load('./gameboy.glb', (gltf) => {
     cssObject.quaternion.copy(screenQuat);
     // Slight overscan (grows symmetrically from center, so it stays
     // centered) so the flat CSS rectangle always fully covers the
-    // stencil-punched hole, including at its rounded corners — without
-    // this a hairline gap can reveal the page background behind it,
-    // especially as the model tilts with the mouse.
-    const OVERSCAN = 1.035;
+    // stencil-punched hole — without this a hairline gap can reveal the
+    // page background behind it, especially as the model tilts with the
+    // mouse. Kept small since the screen is sharp-cornered now: too much
+    // overscan would push those corners out past where the bezel mesh's
+    // own rounded window naturally hides them.
+    const OVERSCAN = 1.012;
     cssObject.scale.set(screenWidth / domW * OVERSCAN, screenHeight / domH * OVERSCAN, (screenWidth / domW + screenHeight / domH) / 2);
     cssGroup.add(cssObject);
     screenObj = cssObject;
